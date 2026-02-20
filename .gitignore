@@ -1,0 +1,13 @@
+# Archivos de compilación de Nintendo Switch
+build/
+*.nro
+*.elf
+*.nacp
+*.map
+*.nsp
+*.nso
+*.npdm
+
+# Archivos del sistema operativo (Opcional pero recomendado)
+.DS_Store
+Thumbs.db
