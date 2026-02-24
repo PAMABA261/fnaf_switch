@@ -71,7 +71,10 @@
 #define IMG_BLIP_FLASH_11 "romfs:/gfx/22.png"
 
 // --- IMÁGENES DE LA OFICINA ---
-#define IMG_OFFICE "romfs:/gfx/39.png"
+#define IMG_OFFICE "romfs:/gfx/39.png" //Normal
+#define IMG_OFFICE_LIGHT_L "romfs:/gfx/58.png" //Luz izquierda encendida
+#define IMG_OFFICE_LIGHT_R "romfs:/gfx/127.png" //Luz derecha encendida
+
 
 // Animación del ventilador
 #define IMG_FAN_1 "romfs:/gfx/57.png"
@@ -90,4 +93,36 @@
 #define IMG_BUTTON_R_3 "romfs:/gfx/131.png" //Luz pulsada
 #define IMG_BUTTON_R_4 "romfs:/gfx/47.png" //Ambas pulsadas
 
-// Puerta izquierda cerrando
+// Puerta izquierda cerrandose
+#define IMG_DOOR_L_CLOSE_1 "romfs:/gfx/88.png" // Abierta
+#define IMG_DOOR_L_CLOSE_2 "romfs:/gfx/105.png"
+#define IMG_DOOR_L_CLOSE_3 "romfs:/gfx/89.png"
+#define IMG_DOOR_L_CLOSE_4 "romfs:/gfx/91.png"
+#define IMG_DOOR_L_CLOSE_5 "romfs:/gfx/92.png"
+#define IMG_DOOR_L_CLOSE_6 "romfs:/gfx/93.png"
+#define IMG_DOOR_L_CLOSE_7 "romfs:/gfx/94.png"
+#define IMG_DOOR_L_CLOSE_8 "romfs:/gfx/95.png"
+#define IMG_DOOR_L_CLOSE_9 "romfs:/gfx/96.png"
+#define IMG_DOOR_L_CLOSE_10 "romfs:/gfx/97.png"
+#define IMG_DOOR_L_CLOSE_11 "romfs:/gfx/98.png"
+#define IMG_DOOR_L_CLOSE_12 "romfs:/gfx/99.png"
+#define IMG_DOOR_L_CLOSE_13 "romfs:/gfx/100.png"
+#define IMG_DOOR_L_CLOSE_14 "romfs:/gfx/101.png"
+#define IMG_DOOR_L_CLOSE_15 "romfs:/gfx/102.png" // Cerrada
+
+// Puerta derecha cerrandose
+#define IMG_DOOR_R_CLOSE_1 "romfs:/gfx/104.png" // Abierta
+#define IMG_DOOR_R_CLOSE_2 "romfs:/gfx/121.png"
+#define IMG_DOOR_R_CLOSE_3 "romfs:/gfx/106.png"
+#define IMG_DOOR_R_CLOSE_4 "romfs:/gfx/107.png"
+#define IMG_DOOR_R_CLOSE_5 "romfs:/gfx/108.png"
+#define IMG_DOOR_R_CLOSE_6 "romfs:/gfx/109.png"
+#define IMG_DOOR_R_CLOSE_7 "romfs:/gfx/110.png"
+#define IMG_DOOR_R_CLOSE_8 "romfs:/gfx/111.png"
+#define IMG_DOOR_R_CLOSE_9 "romfs:/gfx/112.png"
+#define IMG_DOOR_R_CLOSE_10 "romfs:/gfx/113.png"
+#define IMG_DOOR_R_CLOSE_11 "romfs:/gfx/114.png"
+#define IMG_DOOR_R_CLOSE_12 "romfs:/gfx/115.png"
+#define IMG_DOOR_R_CLOSE_13 "romfs:/gfx/116.png"
+#define IMG_DOOR_R_CLOSE_14 "romfs:/gfx/117.png"
+#define IMG_DOOR_R_CLOSE_15 "romfs:/gfx/118.png" // Cerrada

@@ -8,6 +8,7 @@
                 "C:/devkitPro/portlibs/switch/include/**",
                 "C:/devkitPro/portlibs/switch/include/SDL2/**",
                 "C:/devkitPro/devkitA64/aarch64-none-elf/include/**"
+                
             ],
             "defines": [
                 "__SWITCH__"

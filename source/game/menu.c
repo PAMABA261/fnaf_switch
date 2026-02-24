@@ -40,6 +40,9 @@ static int transition_time = 0;
 
 static SDL_Texture* tex_newspaper_fade = NULL;
 
+static Mix_Chunk* sfx_static_menu = NULL;
+static Mix_Chunk* sfx_menu_blip = NULL;
+
 void menu_init(void) {
     //Cargar a Freddy
     tex_freddy[0] = graphics_load_texture(IMG_MENU_BASE);
@@ -54,7 +57,7 @@ void menu_init(void) {
         SDL_SetTextureBlendMode(tex_static[i], SDL_BLENDMODE_BLEND); 
     }
 
-    // C. Cargar Blips
+    // Cargar Blips
     const char* blip_paths[8] = {IMG_BLIP_1, IMG_BLIP_2, IMG_BLIP_3, IMG_BLIP_4, IMG_BLIP_5, IMG_BLIP_6, IMG_BLIP_7, IMG_BLIP_8};
     for(int i = 0; i < 8; i++) {
         tex_blip[i] = graphics_load_texture(blip_paths[i]);
@@ -96,9 +99,10 @@ void menu_init(void) {
     }
 
     audio_play_music("romfs:/sfx/darkness_music.wav");
-    audio_play_sfx("romfs:/sfx/static2.wav");
+    sfx_static_menu = audio_load_sfx("romfs:/sfx/static2.wav");
+    audio_play_sfx_loop_chunk(sfx_static_menu);
+    sfx_menu_blip = audio_load_sfx("romfs:/sfx/blip3.wav");
 }
-
 
 void menu_update(void) {
     Uint64 current_time = SDL_GetTicks64(); // Qué hora es ahora mismo en milisegundos
@@ -155,12 +159,12 @@ void menu_update(void) {
     } else {
         if (input_get_button_down(HidNpadButton_Up)) {
             selected_option = 0;
-            audio_play_sfx("romfs:/sfx/blip3.wav");
+            audio_play_sfx_chunk(sfx_menu_blip); 
         }
 
         if(input_get_button_down(HidNpadButton_Down)) {
             selected_option = 1;
-            audio_play_sfx("romfs:/sfx/blip3.wav");
+            audio_play_sfx_chunk(sfx_menu_blip); 
         }
 
         if (input_get_button_down(HidNpadButton_A)) {
@@ -256,10 +260,10 @@ void menu_cleanup(void) {
 
     if (tex_newspaper_fade) SDL_DestroyTexture(tex_newspaper_fade);
 
+    if (sfx_static_menu) audio_free_sfx(sfx_static_menu);
+    if (sfx_menu_blip) audio_free_sfx(sfx_menu_blip);
+
     // Esto esta para que al volver al menú si mueres el juego no se quede pillado
     is_transitioning = false;
     transition_time = 0;
-
 }
-
-

@@ -13,12 +13,16 @@ static int timer = 0;
 
 static SDL_Texture* tex_blip_flash[11] = {NULL};
 
+static Mix_Chunk* sfx_blip = NULL;
+
 void what_day_init(void) { 
     timer = 0;
     audio_stop_music();
     audio_stop_all_sfx();
 
-    audio_play_sfx("romfs:/sfx/blip3.wav");
+    // Cargamos el sonido a la memoria
+    sfx_blip = audio_load_sfx("romfs:/sfx/blip3.wav");
+    audio_play_sfx_chunk(sfx_blip);
 
     const char* night_paths[7] = {IMG_NIGHT_1, IMG_NIGHT_2, IMG_NIGHT_3, IMG_NIGHT_4, IMG_NIGHT_5, IMG_NIGHT_6, IMG_NIGHT_7};
 
@@ -76,5 +80,10 @@ void what_day_cleanup(void) {
             SDL_DestroyTexture(tex_blip_flash[i]);
             tex_blip_flash[i] = NULL;
         }
+    }
+
+    if (sfx_blip) {
+        audio_free_sfx(sfx_blip);
+        sfx_blip = NULL;
     }
 }
