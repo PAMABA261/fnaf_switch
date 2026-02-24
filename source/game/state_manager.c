@@ -20,6 +20,12 @@ void what_day_update(void);
 void what_day_draw(void);
 void what_day_cleanup(void);
 
+// Avisamos al mánager de que estas funciones existen en game.c
+void game_init(void);
+void game_update(void);
+void game_draw(void);
+void game_cleanup(void);
+
 static GameState current_state;
 
 void state_manager_init(GameState initial_state) {
@@ -42,6 +48,7 @@ void state_manager_update(void) {
             what_day_update();
             break;
         case STATE_GAME:
+            game_update();
             break;
         case STATE_GAMEOVER:
             break;
@@ -65,7 +72,7 @@ void state_manager_draw(void) {
             what_day_draw();
             break;
         case STATE_GAME:
-            // Aquí dibujaremos la oficina 
+            game_draw();
             break;
         case STATE_GAMEOVER:
             // Estática de televisión
@@ -88,7 +95,7 @@ void state_manager_change(GameState new_state) {
     } else if (current_state == STATE_WHAT_DAY) {
         what_day_cleanup();
     } else if (current_state == STATE_GAME) {
-        // Limpiar la oficina
+        game_cleanup();
     } else if (current_state == STATE_GAMEOVER) {
         // Limpiar la pantalla de Game Over
     } else if (current_state == STATE_CUSTOMIZE) {
@@ -106,7 +113,7 @@ void state_manager_change(GameState new_state) {
     } else if(current_state == STATE_WHAT_DAY) {
         what_day_init();
     } else if(current_state == STATE_GAME) {
-        // Inicializar la oficina
+        game_init();
     } else if(current_state == STATE_GAMEOVER) {
         // Inicializar la pantalla de Game Over
     } else if(current_state == STATE_CUSTOMIZE) {

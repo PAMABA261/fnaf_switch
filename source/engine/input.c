@@ -22,7 +22,7 @@ void input_update(void) {
         quit_requested = true;
     }
 
-    // LEER LA VENTANA DE SDL
+    // LEER LA VENTANA DE SDL (Eventos de sistema)
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) {
@@ -38,4 +38,9 @@ bool input_should_quit(void) {
 bool input_get_button_down(u64 button) {
     u64 kDown = padGetButtonsDown(&pad);
     return (kDown & button) != 0;
+}
+
+s16 input_get_stick_x(int side) { 
+    // Si 'side' es 0, leerá el izquierdo. Si es 1, el derecho.
+    return (s16)padGetStickPos(&pad, side).x;
 }

@@ -69,3 +69,25 @@
 #define IMG_BLIP_FLASH_9 "romfs:/gfx/10.png"
 #define IMG_BLIP_FLASH_10 "romfs:/gfx/21.png"
 #define IMG_BLIP_FLASH_11 "romfs:/gfx/22.png"
+
+// --- IMÁGENES DE LA OFICINA ---
+#define IMG_OFFICE "romfs:/gfx/39.png"
+
+// Animación del ventilador
+#define IMG_FAN_1 "romfs:/gfx/57.png"
+#define IMG_FAN_2 "romfs:/gfx/59.png"
+#define IMG_FAN_3 "romfs:/gfx/60.png"
+
+// Botones izquierdos de la oficina 
+#define IMG_BUTTON_L_1 "romfs:/gfx/122.png" //Normal
+#define IMG_BUTTON_L_2 "romfs:/gfx/124.png" //Puerta pulsada
+#define IMG_BUTTON_L_3 "romfs:/gfx/125.png" //Luz pulsada
+#define IMG_BUTTON_L_4 "romfs:/gfx/130.png" //Ambas pulsadas
+
+// Botones derechos de la oficina
+#define IMG_BUTTON_R_1 "romfs:/gfx/134.png" //Normal
+#define IMG_BUTTON_R_2 "romfs:/gfx/135.png" //Puerta pulsada
+#define IMG_BUTTON_R_3 "romfs:/gfx/131.png" //Luz pulsada
+#define IMG_BUTTON_R_4 "romfs:/gfx/47.png" //Ambas pulsadas
+
+// Puerta izquierda cerrando

@@ -40,3 +40,17 @@ void audio_stop_music(void) {
 void audio_stop_all_sfx(void) {
     Mix_HaltChannel(-1); // Detiene todos los canales de sonido
 }
+
+Mix_Chunk* audio_load_sfx(const char* path) {
+    return Mix_LoadWAV(path);
+}
+
+void audio_play_sfx_loop_chunk(Mix_Chunk* sfx) {
+    if (sfx != NULL) {
+        Mix_PlayChannel(-1, sfx, -1); // El "-1" busca el primer canal libre. El "-1" para que haga bucle infinito
+    }
+}
+
+void audio_free_sfx(Mix_Chunk* sfx) {
+    Mix_FreeChunk(sfx);
+}

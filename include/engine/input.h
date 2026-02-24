@@ -13,3 +13,6 @@ bool input_should_quit(void);
 
 // 4. Función para preguntar si se acaba de pulsar un botón concreto
 bool input_get_button_down(u64 button);
+
+// 5. Función para leer el valor del stick izquierdo (eje X)
+s16 input_get_stick_x(int side);
