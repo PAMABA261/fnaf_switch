@@ -18,15 +18,24 @@ static SDL_Texture* tex_button_R[4] = {NULL, NULL, NULL, NULL};
 static SDL_Texture* tex_door_L_close[DOOR_FRAMES] = {NULL};
 static SDL_Texture* tex_door_R_close[DOOR_FRAMES] = {NULL};
 
+static SDL_Texture* tex_button_cam = NULL; 
+
+#define CAM_FRAMES 11
+static SDL_Texture* tex_cam[CAM_FRAMES] = {NULL};
+
 static bool left_door_on = false;
 static bool left_light_on = false;
 static bool right_door_on = false;
 static bool right_light_on = false;
 
+static bool cam_open = false;
+
 static float door_L_frame = 0.0f;
 static float door_R_frame = 0.0f;
-
 static const float DOOR_ANIM_SPEED = 0.6f; // Velocidad de la animación de las puertas
+
+static float cam_frame = 0.0f;
+static const float CAM_ANIM_SPEED = 0.6f; // Velocidad de la animación de la cámara
 
 static int fan_frame = 0;
 static int fan_timer = 0;
@@ -43,6 +52,7 @@ static int channel_light_R = -1;
 static float camera_x = 160.0f; 
 
 void game_init(void) {
+    
     tex_office_normal = graphics_load_texture(IMG_OFFICE);
     tex_office_light_L = graphics_load_texture(IMG_OFFICE_LIGHT_L);
     tex_office_light_R = graphics_load_texture(IMG_OFFICE_LIGHT_R);
@@ -80,6 +90,18 @@ void game_init(void) {
     for (int i = 0; i < DOOR_FRAMES; i++) {
         tex_door_L_close[i] = graphics_load_texture(paths_door_L[i]);
         tex_door_R_close[i] = graphics_load_texture(paths_door_R[i]);
+    }
+
+    tex_button_cam = graphics_load_texture(IMG_BUTTON_CAM);
+
+    const char* paths_cam[CAM_FRAMES] = {
+        IMG_CAM_OPEN_1, IMG_CAM_OPEN_2, IMG_CAM_OPEN_3, IMG_CAM_OPEN_4, IMG_CAM_OPEN_5,
+        IMG_CAM_OPEN_6, IMG_CAM_OPEN_7, IMG_CAM_OPEN_8, IMG_CAM_OPEN_9, IMG_CAM_OPEN_10, 
+        IMG_CAM_OPEN_11
+    };
+
+    for (int i = 0; i < CAM_FRAMES; i++) {
+        tex_cam[i] = graphics_load_texture(paths_cam[i]);
     }
 
     audio_play_music("romfs:/sfx/ColdPresc_B.wav");
@@ -200,6 +222,24 @@ void game_update(void) {
             }
         }
     }
+
+    if (input_get_button_down(HidNpadButton_A)) {
+        if (cam_frame <= 0.0f || cam_frame >= (CAM_FRAMES - 1)) {
+            cam_open = !cam_open;
+        }
+    }
+
+    if (cam_open) {
+        cam_frame += CAM_ANIM_SPEED;
+        if (cam_frame >= (CAM_FRAMES - 1)) {
+            cam_frame = CAM_FRAMES - 1; 
+        }
+    } else {
+        cam_frame -= CAM_ANIM_SPEED;
+        if (cam_frame <= 0.0f) {
+            cam_frame = 0.0f; 
+        }
+    }
 }
 
 void game_draw(void) {
@@ -269,6 +309,26 @@ void game_draw(void) {
         SDL_Rect dst_rect = {fan_screen_x, base_y, w, h};
         SDL_RenderCopy(renderer, tex_fan[fan_frame], NULL, &dst_rect);
     }
+
+    if (cam_frame > 0.0f) {
+        int current_cam = (int)cam_frame;
+        
+        if (current_cam >= CAM_FRAMES) {
+            current_cam = CAM_FRAMES - 1;
+        }
+        
+        if (tex_cam[current_cam]) {
+            SDL_Rect dst_cam_anim = {0, 0, 1280, 720}; 
+            SDL_RenderCopy(renderer, tex_cam[current_cam], NULL, &dst_cam_anim);
+        }
+    }
+
+    if (cam_frame <= 0.0f || cam_frame >= (CAM_FRAMES - 1)) {
+        if (tex_button_cam) {
+            SDL_Rect dst_cam = {340, 630, 600, 60};
+            SDL_RenderCopy(renderer, tex_button_cam, NULL, &dst_cam);
+        }
+    }
 }
 
 void game_cleanup(void) {
@@ -321,6 +381,18 @@ void game_cleanup(void) {
         if (tex_door_R_close[i]) {
             SDL_DestroyTexture(tex_door_R_close[i]);
             tex_door_R_close[i] = NULL;
+        }
+    }
+
+    if (tex_button_cam) {
+        SDL_DestroyTexture(tex_button_cam);
+        tex_button_cam = NULL;
+    }
+
+    for (int i = 0; i < CAM_FRAMES; i++) {
+        if (tex_cam[i]) {
+            SDL_DestroyTexture(tex_cam[i]);
+            tex_cam[i] = NULL;
         }
     }
 }

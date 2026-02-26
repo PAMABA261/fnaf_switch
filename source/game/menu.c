@@ -219,7 +219,7 @@ void menu_draw(void) {
             SDL_RenderCopy(renderer, tex_night, NULL, &night_rect);
         }
         if (tex_night_num[current_night - 1]) { 
-            SDL_Rect num_rect = {263, 517, 14, 17}; 
+            SDL_Rect num_rect = {248, 519, 14, 17}; 
             SDL_RenderCopy(renderer, tex_night_num[current_night - 1], NULL, &num_rect);
         }
     }

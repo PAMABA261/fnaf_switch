@@ -45,7 +45,7 @@
 #define IMG_NIGHT_NUM_5 "romfs:/gfx/195.png"
 
 
-// --- IMÁGENES DEL PERIÓDICO ---
+// --- IMÁGEN DEL PERIÓDICO ---
 #define IMG_NEWSPAPER "romfs:/gfx/574.png"
 
 // --- NOCHE Y HORA (PANTALLA DE CARGA) ---
@@ -126,3 +126,19 @@
 #define IMG_DOOR_R_CLOSE_13 "romfs:/gfx/116.png"
 #define IMG_DOOR_R_CLOSE_14 "romfs:/gfx/117.png"
 #define IMG_DOOR_R_CLOSE_15 "romfs:/gfx/118.png" // Cerrada
+
+// Boton de las cámaras
+#define IMG_BUTTON_CAM "romfs:/gfx/420.png" 
+
+// Cámara abriendose/cerrandose
+#define IMG_CAM_OPEN_1 "romfs:/gfx/142.png"
+#define IMG_CAM_OPEN_2 "romfs:/gfx/46.png"
+#define IMG_CAM_OPEN_3 "romfs:/gfx/144.png"
+#define IMG_CAM_OPEN_4 "romfs:/gfx/132.png"
+#define IMG_CAM_OPEN_5 "romfs:/gfx/133.png"
+#define IMG_CAM_OPEN_6 "romfs:/gfx/136.png"
+#define IMG_CAM_OPEN_7 "romfs:/gfx/137.png"
+#define IMG_CAM_OPEN_8 "romfs:/gfx/138.png"
+#define IMG_CAM_OPEN_9 "romfs:/gfx/139.png"
+#define IMG_CAM_OPEN_10 "romfs:/gfx/140.png"
+#define IMG_CAM_OPEN_11 "romfs:/gfx/141.png"
