@@ -75,6 +75,8 @@
 #define IMG_OFFICE "romfs:/gfx/39.png" //Normal
 #define IMG_OFFICE_LIGHT_L "romfs:/gfx/58.png" //Luz izquierda encendida
 #define IMG_OFFICE_LIGHT_R "romfs:/gfx/127.png" //Luz derecha encendida
+#define IMG_OFFICE_BLACK_OUT "romfs:/gfx/304.png" //Apagón
+#define IMG_OFFICE_BLACK_OUT_FREDDY "romfs:/gfx/305.png" //Apagón con Freddy en la puerta
 
 // Animación del ventilador
 #define IMG_FAN_1 "romfs:/gfx/57.png"
@@ -170,3 +172,26 @@
 #define IMG_BATTERY_NUMBERS_9 "romfs:/gfx/128.png" // 8
 #define IMG_BATTERY_NUMBERS_10 "romfs:/gfx/146.png" // 9
 #define IMG_BATTERY_PERCENT "romfs:/gfx/208.png" 
+
+// JUMPSCARE FREDDY APAGÓN
+#define IMG_FREDDY_JUMPSCARE_BLACKOUT_1 "romfs:/gfx/326.png"
+#define IMG_FREDDY_JUMPSCARE_BLACKOUT_2 "romfs:/gfx/307.png"
+#define IMG_FREDDY_JUMPSCARE_BLACKOUT_3 "romfs:/gfx/348.png"
+#define IMG_FREDDY_JUMPSCARE_BLACKOUT_4 "romfs:/gfx/308.png"
+#define IMG_FREDDY_JUMPSCARE_BLACKOUT_5 "romfs:/gfx/309.png"
+#define IMG_FREDDY_JUMPSCARE_BLACKOUT_6 "romfs:/gfx/310.png"
+#define IMG_FREDDY_JUMPSCARE_BLACKOUT_7 "romfs:/gfx/311.png"
+#define IMG_FREDDY_JUMPSCARE_BLACKOUT_8 "romfs:/gfx/312.png"
+#define IMG_FREDDY_JUMPSCARE_BLACKOUT_9 "romfs:/gfx/313.png"
+#define IMG_FREDDY_JUMPSCARE_BLACKOUT_10 "romfs:/gfx/314.png"
+#define IMG_FREDDY_JUMPSCARE_BLACKOUT_11 "romfs:/gfx/315.png"
+#define IMG_FREDDY_JUMPSCARE_BLACKOUT_12 "romfs:/gfx/316.png"
+#define IMG_FREDDY_JUMPSCARE_BLACKOUT_13 "romfs:/gfx/317.png"
+#define IMG_FREDDY_JUMPSCARE_BLACKOUT_14 "romfs:/gfx/318.png"
+#define IMG_FREDDY_JUMPSCARE_BLACKOUT_15 "romfs:/gfx/319.png"
+#define IMG_FREDDY_JUMPSCARE_BLACKOUT_16 "romfs:/gfx/320.png"
+#define IMG_FREDDY_JUMPSCARE_BLACKOUT_17 "romfs:/gfx/321.png"
+#define IMG_FREDDY_JUMPSCARE_BLACKOUT_18 "romfs:/gfx/322.png"
+#define IMG_FREDDY_JUMPSCARE_BLACKOUT_19 "romfs:/gfx/323.png"
+#define IMG_FREDDY_JUMPSCARE_BLACKOUT_20 "romfs:/gfx/324.png"
+#define IMG_FREDDY_JUMPSCARE_BLACKOUT_21 "romfs:/gfx/325.png"

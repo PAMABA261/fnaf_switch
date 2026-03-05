@@ -17,7 +17,7 @@ static SDL_Texture* tex_continue = NULL;
 static SDL_Texture* tex_selector = NULL;
 static SDL_Texture* tex_night = NULL;
 static SDL_Texture* tex_night_num[5];
-int current_night = 1;
+extern int current_night;
 
 static int current_freddy = 0;
 static int current_static = 0;
