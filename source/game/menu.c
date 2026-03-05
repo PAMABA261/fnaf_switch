@@ -100,7 +100,7 @@ void menu_init(void) {
 
     audio_play_music("romfs:/sfx/darkness_music.wav");
     sfx_static_menu = audio_load_sfx("romfs:/sfx/static2.wav");
-    audio_play_sfx_loop_chunk(sfx_static_menu);
+    audio_play_sfx_chunk(sfx_static_menu);
     sfx_menu_blip = audio_load_sfx("romfs:/sfx/blip3.wav");
 }
 

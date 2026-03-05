@@ -37,7 +37,8 @@
 #define IMG_CONTINUE "romfs:/gfx/449.png"
 #define IMG_SELECTOR "romfs:/gfx/450.png"
 
-#define IMG_NIGHT "romfs:/gfx/475.png"
+#define IMG_NIGHT "romfs:/gfx/475.png" // Night del menú
+#define IMG_NIGHT_GAME "romfs:/gfx/447.png" // Night de la noche
 #define IMG_NIGHT_NUM_1 "romfs:/gfx/191.png"
 #define IMG_NIGHT_NUM_2 "romfs:/gfx/192.png"
 #define IMG_NIGHT_NUM_3 "romfs:/gfx/193.png"
@@ -74,7 +75,6 @@
 #define IMG_OFFICE "romfs:/gfx/39.png" //Normal
 #define IMG_OFFICE_LIGHT_L "romfs:/gfx/58.png" //Luz izquierda encendida
 #define IMG_OFFICE_LIGHT_R "romfs:/gfx/127.png" //Luz derecha encendida
-
 
 // Animación del ventilador
 #define IMG_FAN_1 "romfs:/gfx/57.png"
@@ -142,3 +142,31 @@
 #define IMG_CAM_OPEN_9 "romfs:/gfx/139.png"
 #define IMG_CAM_OPEN_10 "romfs:/gfx/140.png"
 #define IMG_CAM_OPEN_11 "romfs:/gfx/141.png"
+
+// Horas de la noche
+#define IMG_HOUR_1 "romfs:/gfx/252.png" // 1
+#define IMG_HOUR_2 "romfs:/gfx/253.png" // 2
+#define IMG_HOUR_3 "romfs:/gfx/254.png" // 3
+#define IMG_HOUR_4 "romfs:/gfx/255.png" // 4
+#define IMG_HOUR_5 "romfs:/gfx/256.png" // 5
+#define IMG_HOUR_AM "romfs:/gfx/251.png" // AM
+
+// Bateria
+#define IMG_BATTERY_1 "romfs:/gfx/212.png" // 1 Barra
+#define IMG_BATTERY_2 "romfs:/gfx/213.png" // 2 Barras
+#define IMG_BATTERY_3 "romfs:/gfx/214.png" // 3 Barras
+#define IMG_BATTERY_4 "romfs:/gfx/456.png" // 4 Barras
+#define IMG_BATTERY_5 "romfs:/gfx/455.png" // 5 Barras
+#define IMG_USAGE "romfs:/gfx/209.png" // Texto del uso
+#define IMG_POWER_LEFT "romfs:/gfx/207.png" // Texto de lo que queda de batería
+#define IMG_BATTERY_NUMBERS_1 "romfs:/gfx/52.png" // 0
+#define IMG_BATTERY_NUMBERS_2 "romfs:/gfx/81.png" // 1
+#define IMG_BATTERY_NUMBERS_3 "romfs:/gfx/82.png" // 2
+#define IMG_BATTERY_NUMBERS_4 "romfs:/gfx/84.png" // 3
+#define IMG_BATTERY_NUMBERS_5 "romfs:/gfx/85.png" // 4
+#define IMG_BATTERY_NUMBERS_6 "romfs:/gfx/86.png" // 5
+#define IMG_BATTERY_NUMBERS_7 "romfs:/gfx/87.png" // 6
+#define IMG_BATTERY_NUMBERS_8 "romfs:/gfx/123.png" // 7
+#define IMG_BATTERY_NUMBERS_9 "romfs:/gfx/128.png" // 8
+#define IMG_BATTERY_NUMBERS_10 "romfs:/gfx/146.png" // 9
+#define IMG_BATTERY_PERCENT "romfs:/gfx/208.png" 
