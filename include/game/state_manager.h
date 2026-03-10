@@ -6,6 +6,7 @@ typedef enum {
     STATE_AD,           // Frame 10: El Periódico (Help Wanted)
     STATE_WHAT_DAY,     // Frame 2: El texto "12:00 AM - 1st Night"
     STATE_GAME,         // Frame 3: La Oficina 
+    STATE_6AM,          // Frame 6: Transición a las 6AM
     STATE_GAMEOVER,     // Frame 8: La estática y el "Game Over"
     STATE_CUSTOMIZE,    // Frame 12: Custom Night 
     STATE_THE_END       // Frames 9, 11, 13: Los cheques de pago

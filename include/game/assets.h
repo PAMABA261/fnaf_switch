@@ -195,3 +195,8 @@
 #define IMG_FREDDY_JUMPSCARE_BLACKOUT_19 "romfs:/gfx/323.png"
 #define IMG_FREDDY_JUMPSCARE_BLACKOUT_20 "romfs:/gfx/324.png"
 #define IMG_FREDDY_JUMPSCARE_BLACKOUT_21 "romfs:/gfx/325.png"
+
+//Transición 5AM-6AM
+#define IMG_6AM_5 "romfs:/gfx/350.png" // 5
+#define IMG_6AM_6 "romfs:/gfx/351.png" // 6
+#define IMG_6AM_AM "romfs:/gfx/352.png" // AM

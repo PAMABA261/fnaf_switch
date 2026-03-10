@@ -3,6 +3,7 @@
 #include "engine/audio.h"
 #include "engine/input.h"
 #include "game/state_manager.h"
+#include "game/save_system.h"
 #include <SDL2/SDL.h>
 #include <stdlib.h> 
 
@@ -44,6 +45,10 @@ static Mix_Chunk* sfx_static_menu = NULL;
 static Mix_Chunk* sfx_menu_blip = NULL;
 
 void menu_init(void) {
+    
+    //Cargamos la partida
+    save_system_load();
+
     //Cargar a Freddy
     tex_freddy[0] = graphics_load_texture(IMG_MENU_BASE);
     tex_freddy[1] = graphics_load_texture(IMG_MENU_VAR_1);
@@ -168,6 +173,10 @@ void menu_update(void) {
         }
 
         if (input_get_button_down(HidNpadButton_A)) {
+            if (selected_option == 0) {
+                current_night = 1;
+                save_system_save();
+            } 
             is_transitioning = true;
             transition_time = 0;
         }

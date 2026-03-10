@@ -26,6 +26,12 @@ void game_update(void);
 void game_draw(void);
 void game_cleanup(void);
 
+// Avisamos al mánager de que estas funciones existen en 6am.c
+void state_6am_init(void);
+void state_6am_update(void);
+void state_6am_draw(void);
+void state_6am_cleanup(void);
+
 static GameState current_state;
 
 void state_manager_init(GameState initial_state) {
@@ -49,6 +55,9 @@ void state_manager_update(void) {
             break;
         case STATE_GAME:
             game_update();
+            break;
+        case STATE_6AM:
+            state_6am_update();
             break;
         case STATE_GAMEOVER:
             break;
@@ -74,6 +83,9 @@ void state_manager_draw(void) {
         case STATE_GAME:
             game_draw();
             break;
+        case STATE_6AM:
+            state_6am_draw();
+            break;
         case STATE_GAMEOVER:
             // Estática de televisión
             break;
@@ -96,6 +108,8 @@ void state_manager_change(GameState new_state) {
         what_day_cleanup();
     } else if (current_state == STATE_GAME) {
         game_cleanup();
+    } else if (current_state == STATE_6AM) {  
+        state_6am_cleanup();
     } else if (current_state == STATE_GAMEOVER) {
         // Limpiar la pantalla de Game Over
     } else if (current_state == STATE_CUSTOMIZE) {
@@ -114,6 +128,8 @@ void state_manager_change(GameState new_state) {
         what_day_init();
     } else if(current_state == STATE_GAME) {
         game_init();
+    } else if(current_state == STATE_6AM) {   
+        state_6am_init();
     } else if(current_state == STATE_GAMEOVER) {
         // Inicializar la pantalla de Game Over
     } else if(current_state == STATE_CUSTOMIZE) {
@@ -125,5 +141,9 @@ void state_manager_change(GameState new_state) {
 
 void state_manager_cleanup(void) {
     // Al cerrar el juego, limpiamos la memoria de las fotos del menú
-    menu_cleanup();
+    if (current_state == STATE_TITLE) menu_cleanup();
+    else if (current_state == STATE_AD) ad_cleanup();
+    else if (current_state == STATE_WHAT_DAY) what_day_cleanup();
+    else if (current_state == STATE_GAME) game_cleanup();
+    else if (current_state == STATE_6AM) state_6am_cleanup();
 }

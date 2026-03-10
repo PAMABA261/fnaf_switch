@@ -51,7 +51,7 @@ static SDL_Texture* tex_cam[CAM_FRAMES] = {NULL};
 static SDL_Texture* tex_button_cam = NULL; 
 
 // --- Interfaz (HUD) y Tiempo ---
-int current_night = 5;
+int current_night = 1;
 static int current_hour = 0;
 static Uint64 night_start_time = 0;
 static SDL_Texture* tex_night_text = NULL;
@@ -236,13 +236,14 @@ void game_init(void) {
 
 void game_update(void) {
     Uint64 current_time = SDL_GetTicks64();
+
+    current_hour = (current_time - night_start_time) / 86000;
     
     // Condición de victoria
-    current_hour = (current_time - night_start_time) / 86000;
     if (current_hour >= 6) {
         audio_stop_all_sfx();
         audio_stop_music();
-        state_manager_change(STATE_TITLE);
+        state_manager_change(STATE_6AM); 
         return;
     }
 
@@ -476,7 +477,7 @@ void game_update(void) {
 
         } else if (powerout_state == 4) {
             // Fase 4: JUMPSCARE EN CURSO
-            jumpscare_frame += 0.8f; // Velocidad de la animación (casi a 60fps)
+            jumpscare_frame += 1.0f; // Velocidad de la animación 
             
             // Cuando la animación termina, Game Over (volvemos al menú)
             if (jumpscare_frame >= JUMPSCARE_FRAMES) {
