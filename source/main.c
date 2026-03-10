@@ -6,12 +6,13 @@
 
 int main(int argc, char* argv[]) {
 
-    // ABRIR EL DISCO DURO DE LA SWITCH (Sino crashea al intentar cargar cualquier archivo)
+    // 1. SISTEMA DE ARCHIVOS (Lo primero siempre, para poder leer datos)
     romfsInit(); 
 
-    // Inicialización de la Switch
+    // 2. HARDWARE (Mandos, Pantalla, Chip de Sonido)
     input_init();
     
+    // Si el hardware falla, cerramos todo y salimos
     if (!graphics_init() || !audio_init()) {
         graphics_cleanup();
         audio_cleanup();
@@ -19,10 +20,11 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    // Inicialización del gestor de estados, empezando en el título
-    state_manager_init(STATE_TITLE);
+    // 3. EL JUEGO (Cargar el primer estado)
+    // Ahora que el hardware está listo, llamamos al Warning
+    state_manager_init(STATE_WARNING);
 
-    // El Bucle Principal
+    // 4. EL BUCLE INFINITO (Update -> Draw)
     while (appletMainLoop()) {
         
         input_update();
@@ -31,25 +33,19 @@ int main(int argc, char* argv[]) {
             break; 
         }
 
-        // El main le pregunta al gestor que lógica ejecutar
+        // Primero calculamos lógica
         state_manager_update();
 
-        // El main le pregunta al gestor que limpie la pantalla 
+        // Luego dibujamos (Borrar -> Dibujar -> Mostrar)
         graphics_clear();
-
-        // El main le pregunta al gestor que dibuje lo que quiera en pantalla
         state_manager_draw();
-        
-        // Una vez el gestor ha dibujado lo que quería, mostramos el resultado
         graphics_present();
     }
 
-    // Limpieza final al salir
+    // 5. APAGADO ORDENADO (En orden inverso al encendido)
     state_manager_cleanup();
     audio_cleanup();
     graphics_cleanup();
-
-    // CERRAR EL DISCO DURO AL SALIR
     romfsExit();   
     
     return 0;

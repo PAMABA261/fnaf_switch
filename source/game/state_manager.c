@@ -2,6 +2,12 @@
 #include "engine/graphics.h"
 #include "engine/input.h"
 
+// Avisamos al mánager de que estas funciones existen en warning.c
+void warning_init(void);
+void warning_update(void);
+void warning_draw(void);
+void warning_cleanup(void);
+
 // Avisamos al mánager de que estas funciones existen en menu.c
 void menu_init(void);
 void menu_update(void);
@@ -43,13 +49,16 @@ static GameState current_state;
 void state_manager_init(GameState initial_state) {
     current_state = initial_state;
     
-    if (current_state == STATE_TITLE) {
-        menu_init();
+    if (current_state == STATE_WARNING) {
+        warning_init();
     }
 }
 
 void state_manager_update(void) {
     switch (current_state) {
+        case STATE_WARNING:
+            warning_update();
+            break;
         case STATE_TITLE:
             menu_update(); 
             break;
@@ -80,6 +89,9 @@ void state_manager_update(void) {
 
 void state_manager_draw(void) {
     switch (current_state) {
+        case STATE_WARNING:
+            warning_draw();
+            break;
         case STATE_TITLE:
             menu_draw(); 
             break;
@@ -113,7 +125,9 @@ void state_manager_draw(void) {
 
 void state_manager_change(GameState new_state) {
     // 1. Limpiamos la escena actual
-    if (current_state == STATE_TITLE) {
+    if (current_state == STATE_WARNING) {
+        warning_cleanup();
+    } else if (current_state == STATE_TITLE) {
         menu_cleanup();
     } else if(current_state == STATE_AD) {
         ad_cleanup();
@@ -137,7 +151,9 @@ void state_manager_change(GameState new_state) {
     current_state = new_state;
 
     // 3. Inicializamos la nueva escena
-    if (current_state == STATE_TITLE) {
+    if (current_state == STATE_WARNING) {
+        warning_init();
+    } else if (current_state == STATE_TITLE) {
         menu_init();
     } else if(current_state == STATE_AD) {
         ad_init();
@@ -160,7 +176,8 @@ void state_manager_change(GameState new_state) {
 
 void state_manager_cleanup(void) {
     // Al cerrar el juego, limpiamos la memoria de la escena actual
-    if (current_state == STATE_TITLE) menu_cleanup();
+    if (current_state == STATE_WARNING) warning_cleanup();
+    else if (current_state == STATE_TITLE) menu_cleanup();
     else if (current_state == STATE_AD) ad_cleanup();
     else if (current_state == STATE_WHAT_DAY) what_day_cleanup();
     else if (current_state == STATE_LOADING) loading_cleanup(); 

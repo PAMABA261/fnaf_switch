@@ -2,6 +2,7 @@
 
 // Lista de pantallas (Frames de Clickteam)
 typedef enum {
+    STATE_WARNING,      // Pantalla de advertencia principal
     STATE_TITLE,        // Frame 1: El Menú Principal (Freddy parpadeando)
     STATE_AD,           // Frame 10: El Periódico (Help Wanted)
     STATE_WHAT_DAY,     // Frame 2: El texto "12:00 AM - 1st Night"
