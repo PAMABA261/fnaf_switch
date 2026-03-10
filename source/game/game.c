@@ -6,11 +6,7 @@
 #include <stdlib.h>
 #include <SDL2/SDL.h>
 
-// ==========================================
-// VARIABLES GLOBALES
-// ==========================================
-
-// --- Entorno y Cámara ---
+// Entorno y Cámara
 static float camera_x = 160.0f;
 static SDL_Texture* tex_office_normal = NULL;
 static SDL_Texture* tex_office_light_L = NULL;
@@ -28,7 +24,7 @@ static Uint64 powerout_total_time = 0;
 static Uint64 powerout_flicker_time = 0;
 static bool show_freddy = false;
 
-// --- Puertas y Botones ---
+// Puertas y Botones
 #define DOOR_FRAMES 15
 static const float DOOR_ANIM_SPEED = 0.6f;
 static float door_L_frame = 0.0f;
@@ -42,7 +38,7 @@ static SDL_Texture* tex_door_R_close[DOOR_FRAMES] = {NULL};
 static SDL_Texture* tex_button_L[4] = {NULL};
 static SDL_Texture* tex_button_R[4] = {NULL};
 
-// --- Tableta (Cámaras) ---
+// Tableta (Cámaras)
 #define CAM_FRAMES 11
 static const float CAM_ANIM_SPEED = 0.6f;
 static float cam_frame = 0.0f;
@@ -50,16 +46,16 @@ static bool cam_open = false;
 static SDL_Texture* tex_cam[CAM_FRAMES] = {NULL};
 static SDL_Texture* tex_button_cam = NULL; 
 
-// --- Interfaz (HUD) y Tiempo ---
+// Interfaz (HUD) y Tiempo
 int current_night = 1;
 static int current_hour = 0;
 static Uint64 night_start_time = 0;
 static SDL_Texture* tex_night_text = NULL;
 static SDL_Texture* tex_night_num[5] = {NULL};
-static SDL_Texture* tex_hour[5] = {NULL};
+static SDL_Texture* tex_hour[6] = {NULL};
 static SDL_Texture* tex_am = NULL;
 
-// --- Sistema de Energía ---
+// Sistema de Energía
 static int power_left = 999; 
 static int current_usage = 1;
 static Uint64 last_drain_time = 0; 
@@ -74,7 +70,11 @@ static SDL_Texture* tex_batt_num[10] = {NULL};
 static SDL_Texture* tex_jumpscare_freddy[JUMPSCARE_FRAMES] = {NULL};
 static float jumpscare_frame = 0.0f;
 
-// --- Audio ---
+// Victoria
+static bool is_winning = false;
+static float win_fade = 0.0f;
+
+// Audio
 static Mix_Chunk* sfx_fan = NULL;
 static Mix_Chunk* sfx_light = NULL;
 static Mix_Chunk* sfx_door = NULL;
@@ -89,32 +89,7 @@ static int channel_light_R = -1;
 
 
 void game_init(void) {
-    // --- RESETEO DE VARIABLES DE ESTADO ---
-    camera_x = 160.0f;
-    door_L_frame = 0.0f;
-    door_R_frame = 0.0f;
-    left_door_on = false;
-    left_light_on = false;
-    right_door_on = false;
-    right_light_on = false;
-    cam_open = false;
-    cam_frame = 0.0f;
-    fan_timer = 0;
-    fan_frame = 0;
-    night_start_time = SDL_GetTicks64();
-    last_drain_time = SDL_GetTicks64();
-    last_passive_drain_time = SDL_GetTicks64();
-    power_left = 999;
-    current_hour = 0;
-    is_power_out = false;
-    powerout_state = 0;
-    powerout_step_time = 0;
-    powerout_total_time = 0;
-    powerout_flicker_time = 0;
-    show_freddy = false;
-    jumpscare_frame = 0.0f;
-
-    // Entorno
+    // 1. CARGA DE GRÁFICOS (El cuello de botella de rendimiento)
     tex_office_normal = graphics_load_texture(IMG_OFFICE);
     tex_office_light_L = graphics_load_texture(IMG_OFFICE_LIGHT_L);
     tex_office_light_R = graphics_load_texture(IMG_OFFICE_LIGHT_R);
@@ -124,7 +99,6 @@ void game_init(void) {
     tex_office_blackout = graphics_load_texture(IMG_OFFICE_BLACK_OUT);
     tex_office_blackout_freddy = graphics_load_texture(IMG_OFFICE_BLACK_OUT_FREDDY);
 
-    // Botones
     tex_button_L[0] = graphics_load_texture(IMG_BUTTON_L_1);
     tex_button_L[1] = graphics_load_texture(IMG_BUTTON_L_2);
     tex_button_L[2] = graphics_load_texture(IMG_BUTTON_L_3);
@@ -134,7 +108,6 @@ void game_init(void) {
     tex_button_R[2] = graphics_load_texture(IMG_BUTTON_R_3);
     tex_button_R[3] = graphics_load_texture(IMG_BUTTON_R_4);
 
-    // Puertas
     const char* paths_door_L[DOOR_FRAMES] = {
         IMG_DOOR_L_CLOSE_1, IMG_DOOR_L_CLOSE_2, IMG_DOOR_L_CLOSE_3, IMG_DOOR_L_CLOSE_4, 
         IMG_DOOR_L_CLOSE_5, IMG_DOOR_L_CLOSE_6, IMG_DOOR_L_CLOSE_7, IMG_DOOR_L_CLOSE_8, 
@@ -152,7 +125,6 @@ void game_init(void) {
         tex_door_R_close[i] = graphics_load_texture(paths_door_R[i]);
     }
 
-    // Tableta
     tex_button_cam = graphics_load_texture(IMG_BUTTON_CAM);
     const char* paths_cam[CAM_FRAMES] = {
         IMG_CAM_OPEN_1, IMG_CAM_OPEN_2, IMG_CAM_OPEN_3, IMG_CAM_OPEN_4, IMG_CAM_OPEN_5,
@@ -163,12 +135,12 @@ void game_init(void) {
         tex_cam[i] = graphics_load_texture(paths_cam[i]);
     }
 
-    // HUD: Tiempo y Noche
     tex_hour[0] = graphics_load_texture(IMG_HOUR_1);
     tex_hour[1] = graphics_load_texture(IMG_HOUR_2);
     tex_hour[2] = graphics_load_texture(IMG_HOUR_3);
     tex_hour[3] = graphics_load_texture(IMG_HOUR_4);
     tex_hour[4] = graphics_load_texture(IMG_HOUR_5);
+    tex_hour[5] = graphics_load_texture(IMG_HOUR_6);
     tex_am = graphics_load_texture(IMG_HOUR_AM);
     
     tex_night_text = graphics_load_texture(IMG_NIGHT_GAME);
@@ -178,7 +150,6 @@ void game_init(void) {
     tex_night_num[3] = graphics_load_texture(IMG_NIGHT_NUM_4);
     tex_night_num[4] = graphics_load_texture(IMG_NIGHT_NUM_5);
 
-    // HUD: Energía
     tex_usage_text = graphics_load_texture(IMG_USAGE);
     tex_battery[0] = graphics_load_texture(IMG_BATTERY_1);
     tex_battery[1] = graphics_load_texture(IMG_BATTERY_2);
@@ -217,12 +188,8 @@ void game_init(void) {
         tex_jumpscare_freddy[i] = graphics_load_texture(paths_jumpscare[i]);
     }
 
-    // Audio
-    audio_play_music("romfs:/sfx/ColdPresc_B.wav");
-    audio_set_music_volume(50); 
+    // 2. CARGA DE AUDIO A LA MEMORIA
     sfx_fan = audio_load_sfx("romfs:/sfx/Buzz_Fan_Florescent2.wav");
-    audio_set_sfx_volume(sfx_fan, 50); 
-    audio_play_sfx_loop_chunk(sfx_fan); 
     sfx_light = audio_load_sfx("romfs:/sfx/BallastHumMedium2.wav");
     sfx_door = audio_load_sfx("romfs:/sfx/SFXBible_12478.wav");
     sfx_cam_up = audio_load_sfx("romfs:/sfx/CAMERA_VIDEO_LOA_60105303.wav");
@@ -231,23 +198,65 @@ void game_init(void) {
     sfx_musicbox = audio_load_sfx("romfs:/sfx/music_box.wav");
     sfx_jumpscare = audio_load_sfx("romfs:/sfx/XSCREAM.wav");
     sfx_ambience2 = audio_load_sfx("romfs:/sfx/ambience2.wav");
+
+    // 3. INICIALIZACIÓN DE VARIABLES (Después de cargar todo)
+    camera_x = 160.0f;
+    door_L_frame = 0.0f;
+    door_R_frame = 0.0f;
+    left_door_on = false;
+    left_light_on = false;
+    right_door_on = false;
+    right_light_on = false;
+    cam_open = false;
+    cam_frame = 0.0f;
+    fan_timer = 0;
+    fan_frame = 0;
+    power_left = 999;
+    current_hour = 0;
+    is_power_out = false;
+    powerout_state = 0;
+    powerout_step_time = 0;
+    powerout_total_time = 0;
+    powerout_flicker_time = 0;
+    show_freddy = false;
+    jumpscare_frame = 0.0f;
+    is_winning = false;
+    win_fade = 0.0f;
+
+    night_start_time = SDL_GetTicks64();
+    last_drain_time = SDL_GetTicks64();
+    last_passive_drain_time = SDL_GetTicks64();
+
+    // 4. REPRODUCCIÓN DE AUDIO INICIAL
+    audio_play_music("romfs:/sfx/ColdPresc_B.wav");
+    audio_set_music_volume(50); 
+    if (sfx_fan) {
+        audio_set_sfx_volume(sfx_fan, 50); 
+        audio_play_sfx_loop_chunk(sfx_fan); 
+    }
 }
 
 
 void game_update(void) {
     Uint64 current_time = SDL_GetTicks64();
 
-    current_hour = (current_time - night_start_time) / 86000;
+    current_hour = (current_time - night_start_time) / 2000;
     
-    // Condición de victoria
-    if (current_hour >= 6) {
+    if (current_hour >= 6 && !is_winning) {
+        is_winning = true;
         audio_stop_all_sfx();
         audio_stop_music();
-        state_manager_change(STATE_6AM); 
-        return;
     }
 
-    // Paneo de cámara
+    if (is_winning) {
+        win_fade += 8.0f; 
+        if (win_fade >= 255.0f) {
+            state_manager_change(STATE_6AM); 
+        }
+        return; 
+    }
+
+    // Input y Lógica general
     s16 stick_x = input_get_stick_x(0);
     if (stick_x > 7000 || stick_x < -7000) {
         float speed = (stick_x / 32767.0f) * 5.0f;
@@ -256,13 +265,11 @@ void game_update(void) {
     if (camera_x < 0)   camera_x = 0;
     if (camera_x > 320) camera_x = 320;
 
-    // Salida rápida
     if (input_get_button_down(HidNpadButton_Plus)) {
         state_manager_change(STATE_TITLE);
     }
 
     if (!is_power_out) {
-        // Input: Puertas y Luces
         if (input_get_button_down(HidNpadButton_L)) {
             if (door_L_frame <= 0.0f || door_L_frame >= DOOR_FRAMES -1) { 
                 left_door_on = !left_door_on; 
@@ -301,7 +308,6 @@ void game_update(void) {
             }
         }
 
-        // Input: Tableta
         if (input_get_button_down(HidNpadButton_A)) {
             if (cam_frame <= 0.0f || cam_frame >= (CAM_FRAMES - 1)) {
                 cam_open = !cam_open;
@@ -340,7 +346,7 @@ void game_update(void) {
         if (cam_frame > 0.0f) cam_frame -= CAM_ANIM_SPEED;
     }
 
-    // Consumo de Energía
+    // Gestión de Energía
     current_usage = 1; 
     if (left_door_on) current_usage++;
     if (right_door_on) current_usage++;
@@ -349,7 +355,6 @@ void game_update(void) {
     if (cam_open) current_usage++; 
     if (current_usage > 5) current_usage = 5;
 
-    // Drenaje de Energía
     if (power_left > 0) {
         if (current_time - last_drain_time >= 1000) { 
             last_drain_time = current_time;
@@ -372,7 +377,7 @@ void game_update(void) {
     
     if (power_left < 0) power_left = 0;
 
-    // --- EVENTO: BLACKOUT (APAGÓN) ---
+    // Lógica del Blackout (Apagón)
     if (power_left <= 0 && !is_power_out) {
         is_power_out = true;
         powerout_state = 0;
@@ -406,7 +411,6 @@ void game_update(void) {
 
     if (is_power_out) {
         if (powerout_state == 0) {
-            // Fase 0: Esperando a Freddy (20% cada 5s, o a los 20s forzado)
             if (current_time - powerout_step_time >= 5000) {
                 powerout_step_time = current_time;
                 if (rand() % 5 == 0) powerout_state = 1; 
@@ -423,13 +427,11 @@ void game_update(void) {
             }
 
         } else if (powerout_state == 1) {
-            // Fase 1: Música sonando y Freddy parpadeando (cada 50ms, 25% de verse)
             if (current_time - powerout_flicker_time >= 50) {
                 powerout_flicker_time = current_time;
                 show_freddy = (rand() % 4 == 0); 
             }
 
-            // 20% cada 5s de que se corte, o a los 20s forzado
             if (current_time - powerout_step_time >= 5000) {
                 powerout_step_time = current_time;
                 if (rand() % 5 == 0) powerout_state = 2;
@@ -443,11 +445,10 @@ void game_update(void) {
                 powerout_total_time = current_time;
                 show_freddy = false; 
                 audio_stop_all_sfx(); 
-                if (sfx_fan) audio_play_sfx_loop_chunk(sfx_fan); // Zumbido para el cortocircuito
+                if (sfx_fan) audio_play_sfx_loop_chunk(sfx_fan); 
             }
 
         } else if (powerout_state == 2) {
-            // Fase 2: Cortocircuito visual y sonoro (~400ms)
             if (sfx_fan) {
                 if (rand() % 2 == 0) audio_set_sfx_volume(sfx_fan, 50);
                 else audio_set_sfx_volume(sfx_fan, 0);
@@ -457,29 +458,25 @@ void game_update(void) {
                 powerout_state = 3; 
                 powerout_step_time = current_time;
                 powerout_total_time = current_time;
-                audio_stop_all_sfx(); // Silencio absoluto
+                audio_stop_all_sfx(); 
                 audio_stop_music();
             }
 
         } else if (powerout_state == 3) {
-            // Fase 3: Oscuridad total. 20% cada 2s de atacar, o a los 20s forzado
             if (current_time - powerout_step_time >= 2000) {
                 powerout_step_time = current_time;
                 if (rand() % 5 == 0) {
-                    powerout_state = 4; // ¡Ataque!
+                    powerout_state = 4; 
                     if (sfx_jumpscare) audio_play_sfx_chunk(sfx_jumpscare);
                 }
             }
             if (current_time - powerout_total_time >= 20000 && powerout_state == 3) {
-                powerout_state = 4; // Ataque forzado
+                powerout_state = 4; 
                 if (sfx_jumpscare) audio_play_sfx_chunk(sfx_jumpscare);
             }
 
         } else if (powerout_state == 4) {
-            // Fase 4: JUMPSCARE EN CURSO
-            jumpscare_frame += 1.0f; // Velocidad de la animación 
-            
-            // Cuando la animación termina, Game Over (volvemos al menú)
+            jumpscare_frame += 1.0f;  
             if (jumpscare_frame >= JUMPSCARE_FRAMES) {
                 state_manager_change(STATE_TITLE); 
             }
@@ -487,49 +484,36 @@ void game_update(void) {
     }
 }
 
-
-// ==========================================
-// RENDERIZADO / DRAW
-// ==========================================
 void game_draw(void) {
     SDL_Renderer* renderer = graphics_get_renderer();
 
-    // 1. Fondo de la Oficina (SOLO FASES 0, 1, 2 Y 3 DEL APAGÓN)
     SDL_Texture* current_background = tex_office_normal;
     
     if (is_power_out) {
-        // En Fase 4 (Jumpscare) no dibujamos fondo aquí, lo haremos al final
         if (powerout_state == 0) {
             current_background = tex_office_blackout;
         } else if (powerout_state == 1) {
             if (show_freddy) current_background = tex_office_blackout_freddy;
             else current_background = tex_office_blackout;
         } else if (powerout_state == 2) {
-            // Fase 2: Parpadeo del cortocircuito visual
             if (rand() % 2 == 0) current_background = tex_office_blackout;
-            else current_background = NULL; // Negro puro
+            else current_background = NULL;
         } else if (powerout_state == 3) {
-            // Fase 3: Oscuridad total
             current_background = NULL; 
         } else if (powerout_state == 4) {
-            // Fase 4: Jumpscare inminente, fondo negro para preparar
             current_background = NULL; 
         }
     } else {
-        // Lógica normal de luces de la oficina (cuando hay batería)
         int flicker_chance = rand() % 10;
         if (left_light_on && flicker_chance > 1) current_background = tex_office_light_L;
         else if (right_light_on && flicker_chance > 1) current_background = tex_office_light_R;
     }
 
-    // Dibujamos el fondo (si lo hay)
     if (current_background) {
         SDL_Rect src_rect = {(int)camera_x, 0, 1280, 720};
         SDL_RenderCopy(renderer, current_background, &src_rect, NULL);
     }
 
-    // --- LAS PUERTAS SE DIBUJAN SIEMPRE ENCAPSULADAS ---
-    // Así suben durante el apagón y Freddy se dibujará sobre ellas en Fase 4
     int current_L = (int)door_L_frame;
     if (current_L >= 0 && tex_door_L_close[current_L]) {
         SDL_Rect dst_L = {72 - (int)camera_x, -1, 223, 720};
@@ -542,10 +526,8 @@ void game_draw(void) {
         SDL_RenderCopy(renderer, tex_door_R_close[current_R], NULL, &dst_R);
     }
 
-    // Solo dibujamos los props y la interfaz si TODAVÍA HAY LUZ (No estamos en apagón)
     if (!is_power_out) {
         
-        // Botones L
         int state_L = 0;
         if (left_door_on && !left_light_on) state_L = 1;      
         else if (!left_door_on && left_light_on) state_L = 2; 
@@ -555,7 +537,6 @@ void game_draw(void) {
             SDL_RenderCopy(renderer, tex_button_L[state_L], NULL, &dst_L);
         }
 
-        // Botones R
         int state_R = 0;
         if (right_door_on && !right_light_on) state_R = 1;      
         else if (!right_door_on && right_light_on) state_R = 2; 
@@ -565,7 +546,6 @@ void game_draw(void) {
             SDL_RenderCopy(renderer, tex_button_R[state_R], NULL, &dst_R);
         }
 
-        // Ventilador
         if (tex_fan[fan_frame]) {
             int w, h;
             SDL_QueryTexture(tex_fan[fan_frame], NULL, NULL, &w, &h);
@@ -573,8 +553,6 @@ void game_draw(void) {
             SDL_RenderCopy(renderer, tex_fan[fan_frame], NULL, &dst_rect);
         }
 
-        // 3. Interfaz (HUD)
-        // Reloj
         int am_x = 1200, am_y = 31, num_x = 1135, num_y = 29; 
 
         if (current_hour == 0) { 
@@ -584,7 +562,7 @@ void game_draw(void) {
                 SDL_Rect dst_2 = {num_x + 24, num_y, 24, 30};
                 SDL_RenderCopy(renderer, tex_hour[1], NULL, &dst_2);
             }
-        } else if (current_hour >= 1 && current_hour <= 5) {
+        } else if (current_hour >= 1 && current_hour <= 6) {
             int h_idx = current_hour - 1;
             if (tex_hour[h_idx]) {
                 SDL_Rect dst_h = {num_x + 24, num_y, 24, 30}; 
@@ -596,7 +574,6 @@ void game_draw(void) {
             SDL_RenderCopy(renderer, tex_am, NULL, &dst_am);
         }
 
-        // Noche actual
         if (tex_night_text) {
             int night_x = 1148, night_y = 74;
             SDL_Rect dst_night = {night_x, night_y, 63, 14};
@@ -613,7 +590,6 @@ void game_draw(void) {
             }
         }
             
-        // Consumo (Usage)
         if (tex_usage_text) {
             SDL_Rect dst_usage = {38, 667, 72, 14};
             SDL_RenderCopy(renderer, tex_usage_text, NULL, &dst_usage);
@@ -626,7 +602,6 @@ void game_draw(void) {
             }
         }
 
-        // Energía restante (Power Left)
         if (tex_power_text) {
             SDL_Rect dst_pow = {38, 631, 137, 14};
             SDL_RenderCopy(renderer, tex_power_text, NULL, &dst_pow);
@@ -652,7 +627,6 @@ void game_draw(void) {
             SDL_RenderCopy(renderer, tex_power_percent, NULL, &dst_perc);
         }
 
-        // Botón de Tableta
         if (cam_frame <= 0.0f || cam_frame >= (CAM_FRAMES - 1)) {
             if (tex_button_cam) {
                 SDL_Rect dst_cam = {340, 630, 600, 60};
@@ -671,7 +645,6 @@ void game_draw(void) {
         }
     }
 
-    // 5. Overlays (Cámara por encima de todo)
     if (cam_frame > 0.0f) {
         int current_cam = (int)cam_frame;
         if (current_cam >= CAM_FRAMES) current_cam = CAM_FRAMES - 1;
@@ -680,19 +653,21 @@ void game_draw(void) {
             SDL_RenderCopy(renderer, tex_cam[current_cam], NULL, &dst_cam_anim);
         }
     }
+
+    if (is_winning) {
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, (Uint8)win_fade);
+        SDL_Rect fullscreen = {0, 0, 1280, 720};
+        SDL_RenderFillRect(renderer, &fullscreen);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+    }
 }
 
-
-// ==========================================
-// LIMPIEZA / CLEANUP
-// ==========================================
 void game_cleanup(void) {
-    // Entorno
     if (tex_office_normal) { SDL_DestroyTexture(tex_office_normal); tex_office_normal = NULL; }
     if (tex_office_light_L) { SDL_DestroyTexture(tex_office_light_L); tex_office_light_L = NULL; }
     if (tex_office_light_R) { SDL_DestroyTexture(tex_office_light_R); tex_office_light_R = NULL; }
 
-    // Puertas y Botones
     for (int i = 0; i < DOOR_FRAMES; i++) {
         if (tex_door_L_close[i]) { SDL_DestroyTexture(tex_door_L_close[i]); tex_door_L_close[i] = NULL; }
         if (tex_door_R_close[i]) { SDL_DestroyTexture(tex_door_R_close[i]); tex_door_R_close[i] = NULL; }
@@ -702,24 +677,26 @@ void game_cleanup(void) {
         if (tex_button_R[i]) { SDL_DestroyTexture(tex_button_R[i]); tex_button_R[i] = NULL; }
     }
 
-    // Tableta
     if (tex_button_cam) { SDL_DestroyTexture(tex_button_cam); tex_button_cam = NULL; }
     for (int i = 0; i < CAM_FRAMES; i++) {
         if (tex_cam[i]) { SDL_DestroyTexture(tex_cam[i]); tex_cam[i] = NULL; }
     }
 
-    // HUD
     if (tex_am) { SDL_DestroyTexture(tex_am); tex_am = NULL; }
     if (tex_night_text) { SDL_DestroyTexture(tex_night_text); tex_night_text = NULL; }
     if (tex_usage_text) { SDL_DestroyTexture(tex_usage_text); tex_usage_text = NULL; }
     if (tex_power_text) { SDL_DestroyTexture(tex_power_text); tex_power_text = NULL; }
     if (tex_power_percent) { SDL_DestroyTexture(tex_power_percent); tex_power_percent = NULL; }
     
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 6; i++) {
         if (tex_hour[i]) { SDL_DestroyTexture(tex_hour[i]); tex_hour[i] = NULL; }
+    }
+    
+    for (int i = 0; i < 5; i++) {
         if (tex_night_num[i]) { SDL_DestroyTexture(tex_night_num[i]); tex_night_num[i] = NULL; }
         if (tex_battery[i]) { SDL_DestroyTexture(tex_battery[i]); tex_battery[i] = NULL; }
     }
+
     for (int i = 0; i < 10; i++) {
         if (tex_batt_num[i]) { SDL_DestroyTexture(tex_batt_num[i]); tex_batt_num[i] = NULL; }
     }
@@ -734,7 +711,6 @@ void game_cleanup(void) {
         }
     }
 
-    // Audio
     audio_stop_music();
     audio_stop_all_sfx();
     if (sfx_fan) { audio_free_sfx(sfx_fan); sfx_fan = NULL; }

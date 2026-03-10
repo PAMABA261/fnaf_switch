@@ -20,6 +20,12 @@ void what_day_update(void);
 void what_day_draw(void);
 void what_day_cleanup(void);
 
+// Avisamos al mánager de que estas funciones existen en loading.c (NUEVO)
+void loading_init(void);
+void loading_update(void);
+void loading_draw(void);
+void loading_cleanup(void);
+
 // Avisamos al mánager de que estas funciones existen en game.c
 void game_init(void);
 void game_update(void);
@@ -53,6 +59,9 @@ void state_manager_update(void) {
         case STATE_WHAT_DAY:
             what_day_update();
             break;
+        case STATE_LOADING: 
+            loading_update();
+            break;
         case STATE_GAME:
             game_update();
             break;
@@ -80,6 +89,9 @@ void state_manager_draw(void) {
         case STATE_WHAT_DAY:
             what_day_draw();
             break;
+        case STATE_LOADING: 
+            loading_draw();
+            break;
         case STATE_GAME:
             game_draw();
             break;
@@ -100,12 +112,15 @@ void state_manager_draw(void) {
 }
 
 void state_manager_change(GameState new_state) {
+    // 1. Limpiamos la escena actual
     if (current_state == STATE_TITLE) {
         menu_cleanup();
     } else if(current_state == STATE_AD) {
         ad_cleanup();
     } else if (current_state == STATE_WHAT_DAY) {
         what_day_cleanup();
+    } else if (current_state == STATE_LOADING) { 
+        loading_cleanup();
     } else if (current_state == STATE_GAME) {
         game_cleanup();
     } else if (current_state == STATE_6AM) {  
@@ -118,14 +133,18 @@ void state_manager_change(GameState new_state) {
         // Limpiar los cheques de pago
     }
 
+    // 2. Cambiamos la variable de estado
     current_state = new_state;
 
+    // 3. Inicializamos la nueva escena
     if (current_state == STATE_TITLE) {
         menu_init();
     } else if(current_state == STATE_AD) {
         ad_init();
     } else if(current_state == STATE_WHAT_DAY) {
         what_day_init();
+    } else if(current_state == STATE_LOADING) { 
+        loading_init();
     } else if(current_state == STATE_GAME) {
         game_init();
     } else if(current_state == STATE_6AM) {   
@@ -140,10 +159,11 @@ void state_manager_change(GameState new_state) {
 }
 
 void state_manager_cleanup(void) {
-    // Al cerrar el juego, limpiamos la memoria de las fotos del menú
+    // Al cerrar el juego, limpiamos la memoria de la escena actual
     if (current_state == STATE_TITLE) menu_cleanup();
     else if (current_state == STATE_AD) ad_cleanup();
     else if (current_state == STATE_WHAT_DAY) what_day_cleanup();
+    else if (current_state == STATE_LOADING) loading_cleanup(); 
     else if (current_state == STATE_GAME) game_cleanup();
     else if (current_state == STATE_6AM) state_6am_cleanup();
 }

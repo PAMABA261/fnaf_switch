@@ -25,13 +25,12 @@ static int current_static = 0;
 static int current_blip = 0;
 
 static bool show_blip = false;
-static Uint8 static_alpha = 150; //Trasparencia de la estática
-static Uint8 blip_alpha = 255; //Trasparencia de los destellos
-static float scanline_y = -38.0f; // Posición de la scanline
+static Uint8 static_alpha = 150; 
+static Uint8 blip_alpha = 255; 
+static float scanline_y = -38.0f; 
 
-static int selected_option = 0; //  0 = New Game, 1 = Continue
+static int selected_option = 0; 
 
-//Relojes para saber cuándo cambiar la animación
 static Uint64 last_freddy_time = 0;
 static Uint64 last_static_time = 0;
 static Uint64 last_blip_time = 0;
@@ -45,45 +44,37 @@ static Mix_Chunk* sfx_static_menu = NULL;
 static Mix_Chunk* sfx_menu_blip = NULL;
 
 void menu_init(void) {
-    
-    //Cargamos la partida
-    save_system_load();
-
-    //Cargar a Freddy
+    // 1. CARGA DE GRÁFICOS
     tex_freddy[0] = graphics_load_texture(IMG_MENU_BASE);
     tex_freddy[1] = graphics_load_texture(IMG_MENU_VAR_1);
     tex_freddy[2] = graphics_load_texture(IMG_MENU_VAR_2);
     tex_freddy[3] = graphics_load_texture(IMG_MENU_VAR_3);
 
-    // Cargar Estática 
     const char* static_paths[8] = {IMG_STATIC_1, IMG_STATIC_2, IMG_STATIC_3, IMG_STATIC_4, IMG_STATIC_5, IMG_STATIC_6, IMG_STATIC_7, IMG_STATIC_8};
     for(int i = 0; i < 8; i++) {
         tex_static[i] = graphics_load_texture(static_paths[i]);
-        SDL_SetTextureBlendMode(tex_static[i], SDL_BLENDMODE_BLEND); 
+        if (tex_static[i]) SDL_SetTextureBlendMode(tex_static[i], SDL_BLENDMODE_BLEND); 
     }
 
-    // Cargar Blips
     const char* blip_paths[8] = {IMG_BLIP_1, IMG_BLIP_2, IMG_BLIP_3, IMG_BLIP_4, IMG_BLIP_5, IMG_BLIP_6, IMG_BLIP_7, IMG_BLIP_8};
     for(int i = 0; i < 8; i++) {
         tex_blip[i] = graphics_load_texture(blip_paths[i]);
-        SDL_SetTextureBlendMode(tex_blip[i], SDL_BLENDMODE_BLEND);
+        if (tex_blip[i]) SDL_SetTextureBlendMode(tex_blip[i], SDL_BLENDMODE_BLEND);
     }
 
-    // Cargar Scanline
     tex_scanline = graphics_load_texture(IMG_SCANLINE);
     if (tex_scanline) {
         SDL_SetTextureBlendMode(tex_scanline, SDL_BLENDMODE_BLEND);
-        SDL_SetTextureAlphaMod(tex_scanline, 100); // Transparencia fija para la scanline
+        SDL_SetTextureAlphaMod(tex_scanline, 100); 
     }
 
     tex_title = graphics_load_texture(IMG_TITLE);
     if (tex_title) SDL_SetTextureBlendMode(tex_title, SDL_BLENDMODE_BLEND);
 
     tex_new_game = graphics_load_texture(IMG_NEW_GAME);
-
     if (tex_new_game) SDL_SetTextureBlendMode(tex_new_game, SDL_BLENDMODE_BLEND);
+    
     tex_continue = graphics_load_texture(IMG_CONTINUE);
-
     if (tex_continue) SDL_SetTextureBlendMode(tex_continue, SDL_BLENDMODE_BLEND);
 
     tex_selector = graphics_load_texture(IMG_SELECTOR);
@@ -100,43 +91,63 @@ void menu_init(void) {
 
     tex_newspaper_fade = graphics_load_texture(IMG_NEWSPAPER);
     if (tex_newspaper_fade) {
-        SDL_SetTextureBlendMode(tex_newspaper_fade, SDL_BLENDMODE_BLEND); // Le activamos el modo de transparencia
+        SDL_SetTextureBlendMode(tex_newspaper_fade, SDL_BLENDMODE_BLEND); 
     }
 
-    audio_play_music("romfs:/sfx/darkness_music.wav");
+    // 2. CARGA DE AUDIO A LA MEMORIA
     sfx_static_menu = audio_load_sfx("romfs:/sfx/static2.wav");
-    audio_play_sfx_chunk(sfx_static_menu);
     sfx_menu_blip = audio_load_sfx("romfs:/sfx/blip3.wav");
+
+    // 3. INICIALIZACIÓN DE VARIABLES Y LÓGICA
+    save_system_load();
+    
+    current_freddy = 0;
+    current_static = 0;
+    current_blip = 0;
+    show_blip = false;
+    static_alpha = 150; 
+    blip_alpha = 255; 
+    scanline_y = -38.0f; 
+    selected_option = 0; 
+    is_transitioning = false;
+    transition_time = 0;
+
+    Uint64 current_time = SDL_GetTicks64();
+    last_freddy_time = current_time;
+    last_static_time = current_time;
+    last_blip_time = current_time;
+
+    // 4. REPRODUCCIÓN DE AUDIO INICIAL
+    audio_play_music("romfs:/sfx/darkness_music.wav");
+    if (sfx_static_menu) {
+        audio_play_sfx_chunk(sfx_static_menu);
+    }
 }
 
 void menu_update(void) {
-    Uint64 current_time = SDL_GetTicks64(); // Qué hora es ahora mismo en milisegundos
+    Uint64 current_time = SDL_GetTicks64(); 
 
-    // Mover la scanline lentamente hacia abajo
-    scanline_y += 1.0f; // Velocidad de caída
-    if (scanline_y > 720.0f) { // Si se sale de la pantalla, vuelve a empezar desde arriba
+    scanline_y += 1.0f; 
+    if (scanline_y > 720.0f) { 
         scanline_y = -38.0f;
     }
 
-    // LÓGICA DE FREDDY (Cada 80ms tiramos el dado de 100 caras)
     if (current_time > last_freddy_time + 80) {
-        int r = rand() % 100; // Número aleatorio entre 0 y 99
+        int r = rand() % 100; 
         if (r == 99) current_freddy = 3; 
         else if (r == 98) current_freddy = 2; 
         else if (r == 97) current_freddy = 1; 
-        else current_freddy = 0; // Freddy normal 
+        else current_freddy = 0;  
 
-        last_freddy_time = current_time; // Actualizamos el reloj de Freddy 
+        last_freddy_time = current_time;  
     }
 
-    // LÓGICA DE LA ESTÁTICA (Cada 40ms cambiamos de frame y de transparencia)
     if (current_time > last_static_time + 40) {
         current_static = (current_static + 1) % 8;
         static_alpha = 50 + (rand() % 100);  
         last_static_time = current_time;
     }
 
-    // LÓGICA DE LOS BLIPS (Cada 300ms decidimos si aparece)
     if (current_time > last_blip_time + 300) {
         show_blip = ((rand() % 3) == 1); 
         if (show_blip) {
@@ -146,7 +157,6 @@ void menu_update(void) {
         last_blip_time = current_time;
     }
 
-    // LÓGICA DEL MENÚ
     if (is_transitioning) {
         transition_time++; 
         if (selected_option == 0) {
@@ -164,12 +174,12 @@ void menu_update(void) {
     } else {
         if (input_get_button_down(HidNpadButton_Up)) {
             selected_option = 0;
-            audio_play_sfx_chunk(sfx_menu_blip); 
+            if (sfx_menu_blip) audio_play_sfx_chunk(sfx_menu_blip); 
         }
 
         if(input_get_button_down(HidNpadButton_Down)) {
             selected_option = 1;
-            audio_play_sfx_chunk(sfx_menu_blip); 
+            if (sfx_menu_blip) audio_play_sfx_chunk(sfx_menu_blip); 
         }
 
         if (input_get_button_down(HidNpadButton_A)) {
@@ -186,14 +196,12 @@ void menu_update(void) {
 void menu_draw(void) {
     SDL_Renderer* renderer = graphics_get_renderer();
 
-    // Dibujar a Freddy
     if (tex_freddy[current_freddy]) {
         SDL_RenderCopy(renderer, tex_freddy[current_freddy], NULL, NULL);
     }
 
-    // Dibujar el Blip encima de Freddy 
     if (show_blip && tex_blip[current_blip]) {
-        SDL_SetTextureAlphaMod(tex_blip[current_blip], blip_alpha); // Aplicamos la transparencia
+        SDL_SetTextureAlphaMod(tex_blip[current_blip], blip_alpha); 
         SDL_RenderCopy(renderer, tex_blip[current_blip], NULL, NULL);
     }
 
@@ -203,7 +211,7 @@ void menu_draw(void) {
     }
 
     if (tex_static[current_static]) {
-        SDL_SetTextureAlphaMod(tex_static[current_static], static_alpha); // Aplicamos la transparencia
+        SDL_SetTextureAlphaMod(tex_static[current_static], static_alpha); 
         SDL_RenderCopy(renderer, tex_static[current_static], NULL, NULL);
     }
 
@@ -235,16 +243,16 @@ void menu_draw(void) {
 
     if (tex_selector) {
         SDL_Rect sel_rect = {111, 0, 43, 26}; 
-        if (selected_option == 0) sel_rect.y = 408; // Al lado de New Game
-        if (selected_option == 1) sel_rect.y = 480; // Al lado de Continue
+        if (selected_option == 0) sel_rect.y = 408; 
+        if (selected_option == 1) sel_rect.y = 480; 
         
         SDL_RenderCopy(renderer, tex_selector, NULL, &sel_rect);
     }
 
     if (is_transitioning) {
         if (selected_option == 0 && tex_newspaper_fade) {
-            int alpha = (transition_time * 255) / 120; // Calculamos la transparencia en función del tiempo de transición
-            if (alpha > 255) alpha = 255; // Aseguramos que no supere el máximo
+            int alpha = (transition_time * 255) / 120; 
+            if (alpha > 255) alpha = 255; 
 
             SDL_SetTextureAlphaMod(tex_newspaper_fade, alpha);
             SDL_Rect fade_rect = {0, 0, 1280, 720};
@@ -254,25 +262,24 @@ void menu_draw(void) {
 }
 
 void menu_cleanup(void) {
-    // Vaciar la memoria al salir 
-    for(int i = 0; i < 4; i++) if (tex_freddy[i]) SDL_DestroyTexture(tex_freddy[i]);
-    for(int i = 0; i < 8; i++) if (tex_static[i]) SDL_DestroyTexture(tex_static[i]);
-    for(int i = 0; i < 8; i++) if (tex_blip[i]) SDL_DestroyTexture(tex_blip[i]);
-    if (tex_scanline) SDL_DestroyTexture(tex_scanline);
+    for(int i = 0; i < 4; i++) if (tex_freddy[i]) { SDL_DestroyTexture(tex_freddy[i]); tex_freddy[i] = NULL; }
+    for(int i = 0; i < 8; i++) if (tex_static[i]) { SDL_DestroyTexture(tex_static[i]); tex_static[i] = NULL; }
+    for(int i = 0; i < 8; i++) if (tex_blip[i]) { SDL_DestroyTexture(tex_blip[i]); tex_blip[i] = NULL; }
+    
+    if (tex_scanline) { SDL_DestroyTexture(tex_scanline); tex_scanline = NULL; }
+    if (tex_title) { SDL_DestroyTexture(tex_title); tex_title = NULL; }
+    if (tex_new_game) { SDL_DestroyTexture(tex_new_game); tex_new_game = NULL; }
+    if (tex_continue) { SDL_DestroyTexture(tex_continue); tex_continue = NULL; }
+    if (tex_selector) { SDL_DestroyTexture(tex_selector); tex_selector = NULL; }
+    if (tex_night) { SDL_DestroyTexture(tex_night); tex_night = NULL; }
 
-    if (tex_title) SDL_DestroyTexture(tex_title);
-    if (tex_new_game) SDL_DestroyTexture(tex_new_game);
-    if (tex_continue) SDL_DestroyTexture(tex_continue);
-    if (tex_selector) SDL_DestroyTexture(tex_selector);
+    for(int i = 0; i < 5; i++) if (tex_night_num[i]) { SDL_DestroyTexture(tex_night_num[i]); tex_night_num[i] = NULL; }
 
-    for(int i = 0; i < 5; i++) if (tex_night_num[i]) SDL_DestroyTexture(tex_night_num[i]);
+    if (tex_newspaper_fade) { SDL_DestroyTexture(tex_newspaper_fade); tex_newspaper_fade = NULL; }
 
-    if (tex_newspaper_fade) SDL_DestroyTexture(tex_newspaper_fade);
+    if (sfx_static_menu) { audio_free_sfx(sfx_static_menu); sfx_static_menu = NULL; }
+    if (sfx_menu_blip) { audio_free_sfx(sfx_menu_blip); sfx_menu_blip = NULL; }
 
-    if (sfx_static_menu) audio_free_sfx(sfx_static_menu);
-    if (sfx_menu_blip) audio_free_sfx(sfx_menu_blip);
-
-    // Esto esta para que al volver al menú si mueres el juego no se quede pillado
     is_transitioning = false;
     transition_time = 0;
 }

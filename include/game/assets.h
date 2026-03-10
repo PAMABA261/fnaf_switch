@@ -71,6 +71,11 @@
 #define IMG_BLIP_FLASH_10 "romfs:/gfx/21.png"
 #define IMG_BLIP_FLASH_11 "romfs:/gfx/22.png"
 
+
+// --- RELOJ DE PANTALLA DE CARGA ---
+#define IMG_CLOCK "romfs:/gfx/482.png"
+
+
 // --- IMÁGENES DE LA OFICINA ---
 #define IMG_OFFICE "romfs:/gfx/39.png" //Normal
 #define IMG_OFFICE_LIGHT_L "romfs:/gfx/58.png" //Luz izquierda encendida
@@ -151,6 +156,7 @@
 #define IMG_HOUR_3 "romfs:/gfx/254.png" // 3
 #define IMG_HOUR_4 "romfs:/gfx/255.png" // 4
 #define IMG_HOUR_5 "romfs:/gfx/256.png" // 5
+#define IMG_HOUR_6 "romfs:/gfx/257.png" // 6
 #define IMG_HOUR_AM "romfs:/gfx/251.png" // AM
 
 // Bateria
