@@ -13,6 +13,7 @@ bool is_power_out = false;
 int powerout_state = 0;
 bool show_freddy = false;
 float jumpscare_frame = 0.0f;
+static const float JUMPSCARE_ANIM_SPEED = 0.60f;
 
 static Uint64 last_drain_time = 0;
 static Uint64 last_passive_drain_time = 0;
@@ -207,7 +208,7 @@ bool power_system_update(int items_on) {
             }
 
         } else if (powerout_state == 4) {
-            jumpscare_frame += 1.0f;  
+            jumpscare_frame += JUMPSCARE_ANIM_SPEED;  
             if (jumpscare_frame >= JUMPSCARE_FRAMES) {
                 state_manager_change(STATE_TITLE); 
             }
@@ -220,45 +221,44 @@ bool power_system_update(int items_on) {
 void power_system_draw_hud(bool cam_open, float cam_frame) {
     if (is_power_out) return; // Si no hay luz, no hay UI de batería
 
-    if (!cam_open || cam_frame < (CAM_FRAMES - 1)) {
-        SDL_Renderer* renderer = graphics_get_renderer();
+    SDL_Renderer* renderer = graphics_get_renderer();
 
-        if (tex_usage_text) {
-            SDL_Rect dst_usage = {38, 667, 72, 14};
-            SDL_RenderCopy(renderer, tex_usage_text, NULL, &dst_usage);
+    // Dibujamos la batería 
+    if (tex_usage_text) {
+        SDL_Rect dst_usage = {38, 667, 72, 14};
+        SDL_RenderCopy(renderer, tex_usage_text, NULL, &dst_usage);
+    }
+    if (current_usage >= 1 && current_usage <= 5) {
+        int b_idx = current_usage - 1; 
+        if (tex_battery[b_idx]) {
+            SDL_Rect dst_batt = {120, 657, 103, 32};
+            SDL_RenderCopy(renderer, tex_battery[b_idx], NULL, &dst_batt);
         }
-        if (current_usage >= 1 && current_usage <= 5) {
-            int b_idx = current_usage - 1; 
-            if (tex_battery[b_idx]) {
-                SDL_Rect dst_batt = {120, 657, 103, 32};
-                SDL_RenderCopy(renderer, tex_battery[b_idx], NULL, &dst_batt);
-            }
-        }
+    }
 
-        if (tex_power_text) {
-            SDL_Rect dst_pow = {38, 631, 137, 14};
-            SDL_RenderCopy(renderer, tex_power_text, NULL, &dst_pow);
-        }
+    if (tex_power_text) {
+        SDL_Rect dst_pow = {38, 631, 137, 14};
+        SDL_RenderCopy(renderer, tex_power_text, NULL, &dst_pow);
+    }
 
-        int display_power = power_left / 10;
-        if (display_power > 99) display_power = 99; 
-        if (display_power < 0) display_power = 0;
+    int display_power = power_left / 10;
+    if (display_power > 99) display_power = 99; 
+    if (display_power < 0) display_power = 0;
 
-        int tens = display_power / 10, units = display_power % 10;
-        int tens_x = 185, units_x = 203, perc_x = 224, batt_y = 624;   
+    int tens = display_power / 10, units = display_power % 10;
+    int tens_x = 185, units_x = 203, perc_x = 224, batt_y = 624;   
 
-        if (display_power >= 10 && tex_batt_num[tens]) {
-            SDL_Rect dst_tens = {tens_x, batt_y, 18, 22};
-            SDL_RenderCopy(renderer, tex_batt_num[tens], NULL, &dst_tens);
-        }
-        if (tex_batt_num[units]) {
-            SDL_Rect dst_units = {units_x, batt_y, 18, 22};
-            SDL_RenderCopy(renderer, tex_batt_num[units], NULL, &dst_units);
-        }
-        if (tex_power_percent) {
-            SDL_Rect dst_perc = {perc_x, 632, 11, 14};
-            SDL_RenderCopy(renderer, tex_power_percent, NULL, &dst_perc);
-        }
+    if (display_power >= 10 && tex_batt_num[tens]) {
+        SDL_Rect dst_tens = {tens_x, batt_y, 18, 22};
+        SDL_RenderCopy(renderer, tex_batt_num[tens], NULL, &dst_tens);
+    }
+    if (tex_batt_num[units]) {
+        SDL_Rect dst_units = {units_x, batt_y, 18, 22};
+        SDL_RenderCopy(renderer, tex_batt_num[units], NULL, &dst_units);
+    }
+    if (tex_power_percent) {
+        SDL_Rect dst_perc = {perc_x, 632, 11, 14};
+        SDL_RenderCopy(renderer, tex_power_percent, NULL, &dst_perc);
     }
 }
 

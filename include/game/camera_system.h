@@ -13,15 +13,15 @@ typedef enum {
 void camera_system_init(void);
 void camera_system_update(void);
 
-// Funciones de dibujado (separadas en capas para que game.c las intercale)
-void camera_system_draw_room(void);      // Se dibuja AL FONDO (cuando la cámara tapa la oficina)
-void camera_system_draw_button(void);    // Se dibuja el botón gris de la UI
-void camera_system_draw_animation(void); // Se dibuja POR ENCIMA (animación de subir/bajar)
+// Funciones de dibujado por capas
+void camera_system_draw_room(void);      // Capa de fondo (Habitación y paneo)
+void camera_system_draw_ui(void);        // Capa del minimapa, botones y REC
+void camera_system_draw_button(void);    // Botón de subir/bajar tableta
+void camera_system_draw_animation(void); // Animación de subir/bajar tableta
 
 void camera_system_cleanup(void);
 
-// Interacciones desde game.c
-void camera_system_toggle(void);         // Llamada cuando pulsamos 'A'
-void camera_system_force_close(void);    // Llamada cuando se va la luz
-bool camera_system_is_open(void);        // Para saber si gasta batería
-float camera_system_get_frame(void);     // Para tapar/destapar los relojes del HUD
+void camera_system_toggle(void);
+void camera_system_force_close(void);
+bool camera_system_is_open(void);
+float camera_system_get_frame(void);

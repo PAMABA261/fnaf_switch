@@ -12,10 +12,12 @@ static SDL_Rect dest_rect;
 static int timer = 0;
 
 static SDL_Texture* tex_blip_flash[11] = {NULL};
-
 static Mix_Chunk* sfx_blip = NULL;
 
 static float fade_out = 0.0f;
+
+// NUEVA VARIABLE PARA LA VELOCIDAD DEL BLIP
+static float blip_frame = 0.0f; 
 
 void what_day_init(void) { 
     // 1. CARGA DE GRÁFICOS Y AUDIO
@@ -37,6 +39,7 @@ void what_day_init(void) {
     audio_stop_music();
     timer = 0;
     fade_out = 0.0f;
+    blip_frame = 0.0f; // Reiniciamos la animación del blip
 
     int widths[7] = {227, 231, 231, 231, 231, 233, 240};
     int heights[7] = {97, 97, 97, 97, 97, 97, 100};
@@ -54,6 +57,11 @@ void what_day_init(void) {
 
 void what_day_update(void) {
     timer++;
+    
+    // ANIMACIÓN DEL BLIP (Velocidad 75 de Clickteam = 0.75f)
+    if (blip_frame < 11.0f) {
+        blip_frame += 0.75f;
+    }
     
     // Inicia el fundido a negro en el último segundo (del frame 70 al 130)
     if (timer > 70) {
@@ -78,11 +86,10 @@ void what_day_draw(void) {
         SDL_RenderCopy(renderer, tex_night, NULL, &dest_rect);
     }
 
-    // Dibujamos la animación del blip (el parpadeo inicial)
-    if (timer >= 1 && timer <= 11) {
-        if (tex_blip_flash[timer - 1]) {
-            SDL_RenderCopy(renderer, tex_blip_flash[timer - 1], NULL, NULL);
-        }
+    // Dibujamos la animación del blip usando nuestra variable flotante
+    int current_blip = (int)blip_frame;
+    if (current_blip < 11 && tex_blip_flash[current_blip]) {
+        SDL_RenderCopy(renderer, tex_blip_flash[current_blip], NULL, NULL);
     }
 
     // Dibujamos la capa negra del fundido por encima de todo

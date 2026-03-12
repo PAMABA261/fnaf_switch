@@ -23,7 +23,7 @@ static int fan_timer = 0;
 
 // Puertas y Botones
 #define DOOR_FRAMES 15
-static const float DOOR_ANIM_SPEED = 0.6f;
+static const float DOOR_ANIM_SPEED = 0.75f;
 static float door_L_frame = 0.0f;
 static float door_R_frame = 0.0f;
 static bool left_door_on = false;
@@ -111,7 +111,7 @@ void game_init(void) {
     audio_play_music("romfs:/sfx/ColdPresc_B.wav");
     audio_set_music_volume(50); 
     if (sfx_fan) {
-        audio_set_sfx_volume(sfx_fan, 50); 
+        audio_set_sfx_volume(sfx_fan, 25); 
         audio_play_sfx_loop_chunk(sfx_fan); 
     }
 }
@@ -156,55 +156,79 @@ void game_update(void) {
     }
 
     // 3. LOGICA PRINCIPAL DE LA OFICINA
-    s16 stick_x = input_get_stick_x(0);
-    if (stick_x > 7000 || stick_x < -7000) {
-        float speed = (stick_x / 32767.0f) * 5.0f;
-        camera_x += speed;
+    
+    // Solo movemos la cámara si la tableta está cerrada Y la animación terminó de bajar
+    if (!camera_system_is_open() && camera_system_get_frame() <= 0.0f) {
+        s16 stick_x = input_get_stick_x(0);
+        if (stick_x > 7000 || stick_x < -7000) {
+            float speed = (stick_x / 32767.0f) * 5.0f;
+            camera_x += speed;
+        }
+        if (camera_x < 0)   camera_x = 0;
+        if (camera_x > 320) camera_x = 320;
     }
-    if (camera_x < 0)   camera_x = 0;
-    if (camera_x > 320) camera_x = 320;
 
     if (input_get_button_down(HidNpadButton_Plus)) {
         state_manager_change(STATE_TITLE);
     }
 
     if (!is_power_out) { // Solo permitimos controles si hay luz
-        if (input_get_button_down(HidNpadButton_L)) {
-            if (door_L_frame <= 0.0f || door_L_frame >= DOOR_FRAMES -1) { 
-                left_door_on = !left_door_on; 
-                audio_play_sfx_chunk(sfx_door); 
+        
+        // Solo permitimos usar puertas y luces si la tableta está BAJADA
+        if (!camera_system_is_open()) {
+            if (input_get_button_down(HidNpadButton_L)) {
+                if (door_L_frame <= 0.0f || door_L_frame >= DOOR_FRAMES -1) { 
+                    left_door_on = !left_door_on; 
+                    audio_play_sfx_chunk(sfx_door); 
+                }
             }
-        }
-        if (input_get_button_down(HidNpadButton_ZL)) {
-            left_light_on = !left_light_on;
-            if (left_light_on) {
-                right_light_on = false;  
-                audio_stop_channel(channel_light_R); 
-                channel_light_L = audio_play_sfx_loop_chunk(sfx_light); 
-            } else {
-                audio_stop_channel(channel_light_L); 
-                channel_light_L = -1;
+            if (input_get_button_down(HidNpadButton_ZL)) {
+                left_light_on = !left_light_on;
+                if (left_light_on) {
+                    right_light_on = false;  
+                    audio_stop_channel(channel_light_R); 
+                    channel_light_L = audio_play_sfx_loop_chunk(sfx_light); 
+                } else {
+                    audio_stop_channel(channel_light_L); 
+                    channel_light_L = -1;
+                }
             }
-        }
-        if (input_get_button_down(HidNpadButton_R)) {
-            if (door_R_frame <= 0.0f || door_R_frame >= DOOR_FRAMES -1) { 
-                right_door_on = !right_door_on;
-                audio_play_sfx_chunk(sfx_door); 
+            if (input_get_button_down(HidNpadButton_R)) {
+                if (door_R_frame <= 0.0f || door_R_frame >= DOOR_FRAMES -1) { 
+                    right_door_on = !right_door_on;
+                    audio_play_sfx_chunk(sfx_door); 
+                }
             }
-        }
-        if (input_get_button_down(HidNpadButton_ZR)) {
-            right_light_on = !right_light_on;
-            if (right_light_on) {
-                left_light_on = false;
-                audio_stop_channel(channel_light_L); 
-                channel_light_R = audio_play_sfx_loop_chunk(sfx_light); 
-            } else {
-                audio_stop_channel(channel_light_R);
-                channel_light_R = -1;
+            if (input_get_button_down(HidNpadButton_ZR)) {
+                right_light_on = !right_light_on;
+                if (right_light_on) {
+                    left_light_on = false;
+                    audio_stop_channel(channel_light_L); 
+                    channel_light_R = audio_play_sfx_loop_chunk(sfx_light); 
+                } else {
+                    audio_stop_channel(channel_light_R);
+                    channel_light_R = -1;
+                }
             }
-        }
+        } // Fin de la restricción de la tableta
+
+        // El botón 'A' para la cámara siempre debe funcionar 
         if (input_get_button_down(HidNpadButton_A)) {
             camera_system_toggle();
+            
+            // Si la cámara se acaba de abrir, apagamos cualquier luz encendida
+            if (camera_system_is_open()) {
+                left_light_on = false;
+                right_light_on = false;
+                audio_stop_channel(channel_light_L);
+                audio_stop_channel(channel_light_R);
+                channel_light_L = -1;
+                channel_light_R = -1;
+                
+                audio_set_sfx_volume(sfx_fan, 10); // Volumen bajo al abrir tablet 
+            } else {
+                audio_set_sfx_volume(sfx_fan, 25); // Volumen normal 
+            }
         }
     }
 
@@ -259,6 +283,10 @@ void game_draw(void) {
 
     // 3. DIBUJAR CÁMARA DE SEGURIDAD (Capa de fondo)
     camera_system_draw_room();
+
+    camera_system_draw_ui();
+
+    camera_system_draw_animation();
 
     // 4. DIBUJAR UI Y OBJETOS SI HAY LUZ
     if (!is_power_out) {

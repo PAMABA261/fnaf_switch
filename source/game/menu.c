@@ -27,13 +27,16 @@ static int current_blip = 0;
 static bool show_blip = false;
 static Uint8 static_alpha = 150; 
 static Uint8 blip_alpha = 255; 
+static Uint8 freddy_alpha = 255; // NUEVO: Transparencia de Freddy
+
 static float scanline_y = -38.0f; 
 
 static int selected_option = 0; 
 
-static Uint64 last_freddy_time = 0;
-static Uint64 last_static_time = 0;
-static Uint64 last_blip_time = 0;
+// --- NUEVOS TEMPORIZADORES DE CLICKTEAM ---
+static Uint64 last_static_alpha_time = 0;
+static Uint64 last_80ms_time = 0;
+static Uint64 last_300ms_time = 0;
 
 static bool is_transitioning = false;
 static int transition_time = 0;
@@ -43,17 +46,30 @@ static SDL_Texture* tex_newspaper_fade = NULL;
 static Mix_Chunk* sfx_static_menu = NULL;
 static Mix_Chunk* sfx_menu_blip = NULL;
 
+// --- VARIABLES DE VELOCIDAD MATEMÁTICA ---
+static float static_anim_frame = 0.0f; 
+static const float MENU_STATIC_SPEED = 0.99f; 
+static const float SCANLINE_SPEED = 0.50f; 
+
+static float blip_anim_frame = 0.0f;
+static const float MENU_BLIP_SPEED = 0.10f; 
+
 void menu_init(void) {
     // 1. CARGA DE GRÁFICOS
     tex_freddy[0] = graphics_load_texture(IMG_MENU_BASE);
     tex_freddy[1] = graphics_load_texture(IMG_MENU_VAR_1);
     tex_freddy[2] = graphics_load_texture(IMG_MENU_VAR_2);
     tex_freddy[3] = graphics_load_texture(IMG_MENU_VAR_3);
+    
+    // IMPORTANTE: Permitir transparencia en Freddy
+    for (int i = 0; i < 4; i++) {
+        if (tex_freddy[i]) SDL_SetTextureBlendMode(tex_freddy[i], SDL_BLENDMODE_BLEND);
+    }
 
     const char* static_paths[8] = {IMG_STATIC_1, IMG_STATIC_2, IMG_STATIC_3, IMG_STATIC_4, IMG_STATIC_5, IMG_STATIC_6, IMG_STATIC_7, IMG_STATIC_8};
     for(int i = 0; i < 8; i++) {
         tex_static[i] = graphics_load_texture(static_paths[i]);
-        if (tex_static[i]) SDL_SetTextureBlendMode(tex_static[i], SDL_BLENDMODE_BLEND); 
+        if (tex_static[i]) SDL_SetTextureBlendMode(tex_static[i], SDL_BLENDMODE_ADD); 
     }
 
     const char* blip_paths[8] = {IMG_BLIP_1, IMG_BLIP_2, IMG_BLIP_3, IMG_BLIP_4, IMG_BLIP_5, IMG_BLIP_6, IMG_BLIP_7, IMG_BLIP_8};
@@ -65,7 +81,7 @@ void menu_init(void) {
     tex_scanline = graphics_load_texture(IMG_SCANLINE);
     if (tex_scanline) {
         SDL_SetTextureBlendMode(tex_scanline, SDL_BLENDMODE_BLEND);
-        SDL_SetTextureAlphaMod(tex_scanline, 100); 
+        SDL_SetTextureAlphaMod(tex_scanline, 55); 
     }
 
     tex_title = graphics_load_texture(IMG_TITLE);
@@ -107,15 +123,18 @@ void menu_init(void) {
     show_blip = false;
     static_alpha = 150; 
     blip_alpha = 255; 
+    freddy_alpha = 255;
     scanline_y = -38.0f; 
     selected_option = 0; 
     is_transitioning = false;
     transition_time = 0;
+    static_anim_frame = 0.0f; 
+    blip_anim_frame = 0.0f;
 
     Uint64 current_time = SDL_GetTicks64();
-    last_freddy_time = current_time;
-    last_static_time = current_time;
-    last_blip_time = current_time;
+    last_static_alpha_time = current_time;
+    last_80ms_time = current_time;
+    last_300ms_time = current_time;
 
     // 4. REPRODUCCIÓN DE AUDIO INICIAL
     audio_play_music("romfs:/sfx/darkness_music.wav");
@@ -127,36 +146,60 @@ void menu_init(void) {
 void menu_update(void) {
     Uint64 current_time = SDL_GetTicks64(); 
 
-    scanline_y += 1.0f; 
-    if (scanline_y > 720.0f) { 
-        scanline_y = -38.0f;
+    // 1. MOVIMIENTO DEL SCANLINE
+    scanline_y += SCANLINE_SPEED; 
+    if (scanline_y > 720.0f) scanline_y = -38.0f;
+
+    // 2. AVANCE DE FRAMES (Estática y Blip)
+    static_anim_frame += MENU_STATIC_SPEED;
+    if (static_anim_frame >= 8.0f) static_anim_frame -= 8.0f; 
+    current_static = (int)static_anim_frame;
+
+    if (show_blip) {
+        blip_anim_frame += MENU_BLIP_SPEED;
+        if (blip_anim_frame >= 8.0f) blip_anim_frame -= 8.0f;
+        current_blip = (int)blip_anim_frame;
     }
 
-    if (current_time > last_freddy_time + 80) {
+    // --- 3. LÓGICA DE TIEMPOS EXACTA DE CLICKTEAM ---
+
+    // 90 milisegundos: Transparencia de la estática
+    if (current_time > last_static_alpha_time + 90) {
+        int ct_alpha = 50 + (rand() % 100);
+        static_alpha = 255 - ct_alpha; // Invertido para SDL2
+        last_static_alpha_time = current_time;
+    }
+
+    // 80 milisegundos: Frame de Freddy y Alpha del Blip
+    if (current_time > last_80ms_time + 80) {
+        // Frame de Freddy
         int r = rand() % 100; 
         if (r == 99) current_freddy = 3; 
         else if (r == 98) current_freddy = 2; 
         else if (r == 97) current_freddy = 1; 
         else current_freddy = 0;  
 
-        last_freddy_time = current_time;  
+        // Alpha del Blip
+        int ct_blip = 100 + (rand() % 100);
+        blip_alpha = 255 - ct_blip;
+
+        last_80ms_time = current_time;
     }
 
-    if (current_time > last_static_time + 40) {
-        current_static = (current_static + 1) % 8;
-        static_alpha = 50 + (rand() % 100);  
-        last_static_time = current_time;
+    // 300 milisegundos: Alpha de Freddy y Toggle del Blip
+    if (current_time > last_300ms_time + 300) {
+        // Alpha de Freddy
+        int ct_freddy = rand() % 250;
+        freddy_alpha = 255 - ct_freddy;
+
+        // Toggle del Blip
+        int blip_state = rand() % 3;
+        show_blip = (blip_state == 1); 
+
+        last_300ms_time = current_time;
     }
 
-    if (current_time > last_blip_time + 300) {
-        show_blip = ((rand() % 3) == 1); 
-        if (show_blip) {
-            current_blip = rand() % 8; 
-            blip_alpha = 100 + (rand() % 100); 
-        }
-        last_blip_time = current_time;
-    }
-
+    // Lógica de transición de pantalla
     if (is_transitioning) {
         transition_time++; 
         if (selected_option == 0) {
@@ -196,7 +239,9 @@ void menu_update(void) {
 void menu_draw(void) {
     SDL_Renderer* renderer = graphics_get_renderer();
 
+    // DIBUJAMOS A FREDDY CON LA OPACIDAD INESTABLE
     if (tex_freddy[current_freddy]) {
+        SDL_SetTextureAlphaMod(tex_freddy[current_freddy], freddy_alpha);
         SDL_RenderCopy(renderer, tex_freddy[current_freddy], NULL, NULL);
     }
 

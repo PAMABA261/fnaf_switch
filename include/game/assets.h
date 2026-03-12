@@ -195,6 +195,37 @@
 #define IMG_BACKSTAGE_1               GFX_PATH "83.png"
 #define IMG_RESTROOMS_1               GFX_PATH "41.png" 
 
+#define IMG_MAP_1                     GFX_PATH "164.png"
+#define IMG_MAP_2                     GFX_PATH "145.png"
+#define IMG_CAM_BORDER                GFX_PATH "11.png"
+#define IMG_REC                       GFX_PATH "7.png"
+#define IMG_CAM_1                     GFX_PATH "167.png" // Cuadrado de las cámaras en el minimapa
+#define IMG_CAM_2                     GFX_PATH "166.png" // Lo mismo pero seleccionado (verde)
+#define IMG_1A                        GFX_PATH "170.png"
+#define IMG_1B                        GFX_PATH "171.png"
+#define IMG_1C                        GFX_PATH "177.png"
+#define IMG_2A                        GFX_PATH "172.png"
+#define IMG_2B                        GFX_PATH "165.png"
+#define IMG_3                         GFX_PATH "168.png"
+#define IMG_4A                        GFX_PATH "169.png"
+#define IMG_4B                        GFX_PATH "173.png"
+#define IMG_5                         GFX_PATH "174.png"
+#define IMG_6                         GFX_PATH "175.png"
+#define IMG_7                         GFX_PATH "176.png"
+
+#define IMG_SHOW_STAGE_TEXT           GFX_PATH "54.png" // Texto "Show Stage"
+#define IMG_DINING_AREA_TEXT          GFX_PATH "72.png" 
+#define IMG_PIRATE_COVE_TEXT          GFX_PATH "73.png" 
+#define IMG_W_HALL_TEXT               GFX_PATH "74.png" 
+#define IMG_W_HALL_CORNER_TEXT        GFX_PATH "76.png" 
+#define IMG_SUPPLY_CLOSET_TEXT        GFX_PATH "50.png" 
+#define IMG_E_HALL_TEXT               GFX_PATH "79.png" 
+#define IMG_E_HALL_CORNER_TEXT        GFX_PATH "75.png" 
+#define IMG_BACKSTAGE_TEXT            GFX_PATH "71.png" 
+#define IMG_RESTROOMS_TEXT            GFX_PATH "77.png" 
+#define IMG_KITCHEN_TEXT              GFX_PATH "78.png"
+#define IMG_KITCHEN_SOUND_TEXT        GFX_PATH "42.png"
+
 // JUMPSCARE FREDDY APAGÓN
 #define IMG_FREDDY_JUMPSCARE_BLACKOUT_1  GFX_PATH "326.png"
 #define IMG_FREDDY_JUMPSCARE_BLACKOUT_2  GFX_PATH "307.png"
