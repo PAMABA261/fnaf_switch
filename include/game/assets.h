@@ -183,6 +183,18 @@
 #define IMG_BATTERY_NUMBERS_10        GFX_PATH "146.png" // 9
 #define IMG_BATTERY_PERCENT           GFX_PATH "208.png" 
 
+// Cámaras
+#define IMG_SHOW_STAGE_1              GFX_PATH "19.png" //Freddy, Bonnie y Chica
+#define IMG_DINNING_AREA_1            GFX_PATH "48.png"
+#define IMG_PIRATE_COVE_1             GFX_PATH "66.png"
+#define IMG_WEST_HALL_1               GFX_PATH "44.png"
+#define IMG_WEST_HALL_CORNER_1        GFX_PATH "0.png"
+#define IMG_SUPPLY_CLOSET_1           GFX_PATH "62.png"
+#define IMG_EAST_HALL_1               GFX_PATH "67.png"
+#define IMG_EAST_HALL_CORNER_1        GFX_PATH "49.png"
+#define IMG_BACKSTAGE_1               GFX_PATH "83.png"
+#define IMG_RESTROOMS_1               GFX_PATH "41.png" 
+
 // JUMPSCARE FREDDY APAGÓN
 #define IMG_FREDDY_JUMPSCARE_BLACKOUT_1  GFX_PATH "326.png"
 #define IMG_FREDDY_JUMPSCARE_BLACKOUT_2  GFX_PATH "307.png"
