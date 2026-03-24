@@ -6,6 +6,8 @@
 
 int main(int argc, char* argv[]) {
 
+    consoleDebugInit(debugDevice_SVC);
+
     // 1. SISTEMA DE ARCHIVOS (Lo primero siempre, para poder leer datos)
     romfsInit(); 
 

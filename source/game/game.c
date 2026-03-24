@@ -2,7 +2,8 @@
 #include "game/state_manager.h"
 #include "game/hud.h"
 #include "game/power_system.h"
-#include "game/camera_system.h" // NUEVO: ¡Añadimos las cámaras!
+#include "game/camera_system.h"
+#include "game/animatronics.h"
 #include "engine/graphics.h"
 #include "engine/input.h"
 #include "engine/audio.h"
@@ -17,6 +18,7 @@ static SDL_Texture* tex_office_light_R = NULL;
 static SDL_Texture* tex_fan[3] = {NULL};
 static SDL_Texture* tex_office_blackout = NULL;
 static SDL_Texture* tex_office_blackout_freddy = NULL;
+static SDL_Texture* tex_office_bonnie = NULL; 
 static int fan_frame = 0;
 static int fan_timer = 0;
 #define FAN_ANIM_SPEED 1
@@ -39,19 +41,34 @@ static SDL_Texture* tex_button_R[4] = {NULL};
 static bool is_winning = false;
 static float win_fade = 0.0f;
 
+// Alucinaciones
+static SDL_Texture* tex_hallucinations[4] = {NULL};
+static int hallucination_timer = 0;      
+static int current_hallucination = -1;
+static int random_sound_timer = 0; 
+
 // Audio de la oficina
 static Mix_Chunk* sfx_fan = NULL;
 static Mix_Chunk* sfx_light = NULL;
 static Mix_Chunk* sfx_door = NULL;
 static int channel_light_L = -1;
 static int channel_light_R = -1;
+static int channel_fan = -1; 
 
+static Mix_Chunk* sfx_circus = NULL;
+static Mix_Chunk* sfx_pounding = NULL;
+static Mix_Chunk* sfx_hallucination[4] = {NULL};
+static Mix_Chunk* sfx_window_scare = NULL; 
+static Mix_Chunk* sfx_error = NULL;
+
+static bool bonnie_scare_played = false; 
 
 void game_init(void) {
     // 1. INICIALIZAR SUBSISTEMAS
     hud_init(); 
     power_system_init(); 
     camera_system_init(); 
+    animatronics_init(current_night);
 
     // 2. CARGA DE GRÁFICOS DE LA OFICINA
     tex_office_normal = graphics_load_texture(IMG_OFFICE);
@@ -62,6 +79,7 @@ void game_init(void) {
     tex_fan[2] = graphics_load_texture(IMG_FAN_3);
     tex_office_blackout = graphics_load_texture(IMG_OFFICE_BLACK_OUT);
     tex_office_blackout_freddy = graphics_load_texture(IMG_OFFICE_BLACK_OUT_FREDDY);
+    tex_office_bonnie = graphics_load_texture(IMG_OFFICE_BONNIE); 
 
     tex_button_L[0] = graphics_load_texture(IMG_BUTTON_L_1);
     tex_button_L[1] = graphics_load_texture(IMG_BUTTON_L_2);
@@ -89,10 +107,34 @@ void game_init(void) {
         tex_door_R_close[i] = graphics_load_texture(paths_door_R[i]);
     }
 
+    tex_hallucinations[0] = graphics_load_texture(IMG_FREDDY_HALLUTINATION);
+    tex_hallucinations[1] = graphics_load_texture(IMG_ITS_ME_1);
+    tex_hallucinations[2] = graphics_load_texture(IMG_BONNIE_HALLUTINATION);
+    tex_hallucinations[3] = graphics_load_texture(IMG_ITS_ME_2);
+
+    hallucination_timer = 0;
+    current_hallucination = -1;
+
+    for (int i = 0; i < 4; i++) {
+        if (tex_hallucinations[i]) {
+            SDL_SetTextureBlendMode(tex_hallucinations[i], SDL_BLENDMODE_BLEND);
+        }
+    }
+
     // 3. CARGA DE AUDIO DE LA OFICINA
     sfx_fan = audio_load_sfx("romfs:/sfx/Buzz_Fan_Florescent2.wav");
     sfx_light = audio_load_sfx("romfs:/sfx/BallastHumMedium2.wav");
     sfx_door = audio_load_sfx("romfs:/sfx/SFXBible_12478.wav");
+
+    sfx_circus = audio_load_sfx("romfs:/sfx/circus.wav");
+    sfx_pounding = audio_load_sfx("romfs:/sfx/DOOR_POUNDING_ME_D0291401.wav");
+    sfx_window_scare = audio_load_sfx("romfs:/sfx/windowscare.wav"); 
+    sfx_error = audio_load_sfx("romfs:/sfx/error.wav");
+
+    sfx_hallucination[0] = audio_load_sfx("romfs:/sfx/COMPUTER_DIGITAL_L2076505.wav");
+    sfx_hallucination[1] = audio_load_sfx("romfs:/sfx/garble1.wav");
+    sfx_hallucination[2] = audio_load_sfx("romfs:/sfx/garble2.wav");
+    sfx_hallucination[3] = audio_load_sfx("romfs:/sfx/garble3.wav");
 
     // 4. INICIALIZACIÓN DE VARIABLES
     camera_x = 160.0f;
@@ -106,16 +148,17 @@ void game_init(void) {
     fan_frame = 0;
     is_winning = false;
     win_fade = 0.0f;
+    random_sound_timer = 0;
+    bonnie_scare_played = false; 
 
     // 5. REPRODUCCIÓN DE AUDIO INICIAL
     audio_play_music("romfs:/sfx/ColdPresc_B.wav");
     audio_set_music_volume(50); 
     if (sfx_fan) {
         audio_set_sfx_volume(sfx_fan, 25); 
-        audio_play_sfx_loop_chunk(sfx_fan); 
+        channel_fan = audio_play_sfx_loop_chunk(sfx_fan); 
     }
 }
-
 
 void game_update(void) {
     // 1. ACTUALIZAR SUBSISTEMAS
@@ -129,10 +172,17 @@ void game_update(void) {
     if (right_light_on) items_on++;
     if (camera_system_is_open()) items_on++;
 
-    // El sistema de energía calcula su lógica y nos avisa si se acaba de ir la luz
     bool just_blacked_out = power_system_update(items_on);
 
     if (just_blacked_out) {
+        if (channel_light_L != -1) audio_stop_channel(channel_light_L);
+        if (channel_light_R != -1) audio_stop_channel(channel_light_R);
+        if (channel_fan != -1) audio_stop_channel(channel_fan);
+        
+        channel_light_L = -1;
+        channel_light_R = -1;
+        channel_fan = -1;
+
         left_light_on = false;
         right_light_on = false;
         if (left_door_on) { left_door_on = false; audio_play_sfx_chunk(sfx_door); }
@@ -156,8 +206,53 @@ void game_update(void) {
     }
 
     // 3. LOGICA PRINCIPAL DE LA OFICINA
+    random_sound_timer++;
+
+    if (random_sound_timer % 300 == 0) {
+        if ((rand() % 30) == 0) audio_play_sfx_chunk(sfx_circus);
+    }
+    if (random_sound_timer % 600 == 0) {
+        if ((rand() % 50) == 0) {
+            int random_vol = 10 + (rand() % 40); 
+            audio_set_sfx_volume(sfx_pounding, random_vol);
+            audio_play_sfx_chunk(sfx_pounding);
+        }
+    }
     
-    // Solo movemos la cámara si la tableta está cerrada Y la animación terminó de bajar
+    // Alucinaciones...
+    if (!is_power_out) {
+        animatronics_update(left_door_on, right_door_on, camera_system_is_open());
+        
+        if (animatronics_get_bonnie_room() != ROOM_DOOR_LEFT) {
+            bonnie_scare_played = false;
+        }
+
+        if (animatronics_get_bonnie_room() == ROOM_OFFICE && left_light_on) {
+            left_light_on = false;
+            audio_stop_channel(channel_light_L);
+            channel_light_L = -1;
+        }
+
+        if (random_sound_timer % 300 == 0) {
+            if ((rand() % 100) == 0) { 
+                hallucination_timer = 60; 
+                int random_snd = rand() % 4;
+                if (sfx_hallucination[random_snd]) {
+                    audio_set_sfx_volume(sfx_hallucination[random_snd], 100); 
+                    audio_play_sfx_chunk(sfx_hallucination[random_snd]);
+                }
+            }
+        }
+        if (hallucination_timer > 0) {
+            hallucination_timer--;
+            if ((rand() % 2) == 0) current_hallucination = rand() % 4; 
+            else current_hallucination = -1; 
+        } else current_hallucination = -1; 
+    } else {
+        hallucination_timer = 0; 
+        current_hallucination = -1;
+    }
+    
     if (!camera_system_is_open() && camera_system_get_frame() <= 0.0f) {
         s16 stick_x = input_get_stick_x(0);
         if (stick_x > 7000 || stick_x < -7000) {
@@ -168,29 +263,31 @@ void game_update(void) {
         if (camera_x > 320) camera_x = 320;
     }
 
-    if (input_get_button_down(HidNpadButton_Plus)) {
-        state_manager_change(STATE_TITLE);
-    }
+    if (input_get_button_down(HidNpadButton_Plus)) state_manager_change(STATE_TITLE);
 
-    if (!is_power_out) { // Solo permitimos controles si hay luz
-        
-        // Solo permitimos usar puertas y luces si la tableta está BAJADA
+    if (!is_power_out) { 
         if (!camera_system_is_open()) {
             if (input_get_button_down(HidNpadButton_L)) {
-                if (door_L_frame <= 0.0f || door_L_frame >= DOOR_FRAMES -1) { 
+                if (animatronics_get_bonnie_room() == ROOM_OFFICE) {
+                    audio_play_sfx_chunk(sfx_error); 
+                } else if (door_L_frame <= 0.0f || door_L_frame >= DOOR_FRAMES -1) { 
                     left_door_on = !left_door_on; 
                     audio_play_sfx_chunk(sfx_door); 
                 }
             }
             if (input_get_button_down(HidNpadButton_ZL)) {
-                left_light_on = !left_light_on;
-                if (left_light_on) {
-                    right_light_on = false;  
-                    audio_stop_channel(channel_light_R); 
-                    channel_light_L = audio_play_sfx_loop_chunk(sfx_light); 
+                if (animatronics_get_bonnie_room() == ROOM_OFFICE) {
+                    audio_play_sfx_chunk(sfx_error); 
                 } else {
-                    audio_stop_channel(channel_light_L); 
-                    channel_light_L = -1;
+                    left_light_on = !left_light_on;
+                    if (left_light_on) {
+                        right_light_on = false;  
+                        audio_stop_channel(channel_light_R); 
+                        channel_light_L = audio_play_sfx_loop_chunk(sfx_light); 
+                    } else {
+                        audio_stop_channel(channel_light_L); 
+                        channel_light_L = -1;
+                    }
                 }
             }
             if (input_get_button_down(HidNpadButton_R)) {
@@ -210,13 +307,9 @@ void game_update(void) {
                     channel_light_R = -1;
                 }
             }
-        } // Fin de la restricción de la tableta
-
-        // El botón 'A' para la cámara siempre debe funcionar 
+        } 
         if (input_get_button_down(HidNpadButton_A)) {
             camera_system_toggle();
-            
-            // Si la cámara se acaba de abrir, apagamos cualquier luz encendida
             if (camera_system_is_open()) {
                 left_light_on = false;
                 right_light_on = false;
@@ -224,17 +317,16 @@ void game_update(void) {
                 audio_stop_channel(channel_light_R);
                 channel_light_L = -1;
                 channel_light_R = -1;
-                
-                audio_set_sfx_volume(sfx_fan, 10); // Volumen bajo al abrir tablet 
+                audio_set_sfx_volume(sfx_fan, 10); 
             } else {
-                audio_set_sfx_volume(sfx_fan, 25); // Volumen normal 
+                audio_set_sfx_volume(sfx_fan, 25); 
             }
         }
     }
 
-    // 4. ANIMACIONES FÍSICAS DE LA OFICINA
     fan_timer++;
-    if (fan_timer >= FAN_ANIM_SPEED) {
+    // Solo animamos el ventilador si hay energía
+    if (!is_power_out && fan_timer >= FAN_ANIM_SPEED) {
         fan_timer = 0;
         fan_frame++;
         if (fan_frame > 2) fan_frame = 0;
@@ -250,7 +342,7 @@ void game_update(void) {
 void game_draw(void) {
     SDL_Renderer* renderer = graphics_get_renderer();
 
-    // 1. DIBUJAR FONDO Y LUCES/APAGÓN
+    // DIBUJAR FONDO Y LUCES/APAGÓN
     SDL_Texture* current_background = tex_office_normal;
     
     if (is_power_out) {
@@ -260,8 +352,21 @@ void game_draw(void) {
         else current_background = NULL;
     } else {
         int flicker_chance = rand() % 10;
-        if (left_light_on && flicker_chance > 1) current_background = tex_office_light_L;
-        else if (right_light_on && flicker_chance > 1) current_background = tex_office_light_R;
+        
+        if (left_light_on && flicker_chance > 1) {
+            if (animatronics_get_bonnie_room() == ROOM_DOOR_LEFT) {
+                current_background = tex_office_bonnie;
+                if (!bonnie_scare_played) {
+                    audio_play_sfx_chunk(sfx_window_scare);
+                    bonnie_scare_played = true;
+                }
+            } else {
+                current_background = tex_office_light_L;
+            }
+        } 
+        else if (right_light_on && flicker_chance > 1) {
+            current_background = tex_office_light_R;
+        }
     }
 
     if (current_background) {
@@ -269,7 +374,7 @@ void game_draw(void) {
         SDL_RenderCopy(renderer, current_background, &src_rect, NULL);
     }
 
-    // 2. DIBUJAR PUERTAS
+    // DIBUJAR PUERTAS
     int current_L = (int)door_L_frame;
     if (current_L >= 0 && tex_door_L_close[current_L]) {
         SDL_Rect dst_L = {72 - (int)camera_x, -1, 223, 720};
@@ -281,20 +386,14 @@ void game_draw(void) {
         SDL_RenderCopy(renderer, tex_door_R_close[current_R], NULL, &dst_R);
     }
 
-    // 3. DIBUJAR CÁMARA DE SEGURIDAD (Capa de fondo)
+    // DIBUJAR CÁMARA DE SEGURIDAD (Capa de fondo)
     camera_system_draw_room();
-
     camera_system_draw_ui();
-
     camera_system_draw_animation();
 
-    // 4. DIBUJAR UI Y OBJETOS SI HAY LUZ
+    // DIBUJAR UI Y OBJETOS SI HAY LUZ
     if (!is_power_out) {
-        
-        // Comprobamos si la cámara está tapando la pantalla
         bool is_cam_fully_open = (camera_system_is_open() && camera_system_get_frame() >= (CAM_FRAMES - 1));
-
-        // Solo dibujamos los botones de la oficina y el ventilador si NO estamos mirando las cámaras
         if (!is_cam_fully_open) {
             int state_L = 0;
             if (left_door_on && !left_light_on) state_L = 1;      
@@ -321,20 +420,21 @@ void game_draw(void) {
                 SDL_RenderCopy(renderer, tex_fan[fan_frame], NULL, &dst_rect);
             }
         }
-
-        // Llamamos a los dibujados de nuestros subsistemas 
         hud_draw(camera_system_is_open(), camera_system_get_frame());
         power_system_draw_hud(camera_system_is_open(), camera_system_get_frame());
-        
-        // El botón para abrir/cerrar las cámaras SIEMPRE se tiene que dibujar
         camera_system_draw_button();
     } 
 
-    // 5. DIBUJAR EFECTOS POR ENCIMA (Jumpscare, animación de tableta)
     power_system_draw_jumpscare();
     camera_system_draw_animation();
 
-    // 6. FUNDIDO DE VICTORIA
+    if (hallucination_timer > 0 && !is_power_out && current_hallucination >= 0) {
+        if (tex_hallucinations[current_hallucination]) {
+            SDL_Rect dst_rect = {0, 0, 1280, 720};
+            SDL_RenderCopy(renderer, tex_hallucinations[current_hallucination], NULL, &dst_rect);
+        }
+    }
+
     if (is_winning) {
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, (Uint8)win_fade);
@@ -345,17 +445,17 @@ void game_draw(void) {
 }
 
 void game_cleanup(void) {
-    // 1. LIMPIAR SUBSISTEMAS
     hud_cleanup();
     power_system_cleanup();
     camera_system_cleanup();
+    animatronics_cleanup();
 
-    // 2. LIMPIAR GRÁFICOS DE LA OFICINA
     if (tex_office_normal) { SDL_DestroyTexture(tex_office_normal); tex_office_normal = NULL; }
     if (tex_office_light_L) { SDL_DestroyTexture(tex_office_light_L); tex_office_light_L = NULL; }
     if (tex_office_light_R) { SDL_DestroyTexture(tex_office_light_R); tex_office_light_R = NULL; }
     if (tex_office_blackout) { SDL_DestroyTexture(tex_office_blackout); tex_office_blackout = NULL; }
     if (tex_office_blackout_freddy) { SDL_DestroyTexture(tex_office_blackout_freddy); tex_office_blackout_freddy = NULL; }
+    if (tex_office_bonnie) { SDL_DestroyTexture(tex_office_bonnie); tex_office_bonnie = NULL; } 
 
     for (int i = 0; i < DOOR_FRAMES; i++) {
         if (tex_door_L_close[i]) { SDL_DestroyTexture(tex_door_L_close[i]); tex_door_L_close[i] = NULL; }
@@ -368,11 +468,26 @@ void game_cleanup(void) {
     for (int i = 0; i < 3; i++) {
         if (tex_fan[i]) { SDL_DestroyTexture(tex_fan[i]); tex_fan[i] = NULL; }
     }
+    for (int i = 0; i < 4; i++) {
+        if (tex_hallucinations[i]) {
+            SDL_DestroyTexture(tex_hallucinations[i]);
+            tex_hallucinations[i] = NULL;
+        }
+    }
 
-    // 3. LIMPIAR AUDIO DE LA OFICINA
     audio_stop_music();
     audio_stop_all_sfx();
     if (sfx_fan) { audio_free_sfx(sfx_fan); sfx_fan = NULL; }
     if (sfx_light) { audio_free_sfx(sfx_light); sfx_light = NULL; }
     if (sfx_door) { audio_free_sfx(sfx_door); sfx_door = NULL; }
+    if (sfx_circus) audio_free_sfx(sfx_circus);
+    if (sfx_pounding) audio_free_sfx(sfx_pounding);
+    if (sfx_window_scare) { audio_free_sfx(sfx_window_scare); sfx_window_scare = NULL; } 
+    if (sfx_error) { audio_free_sfx(sfx_error); sfx_error = NULL; } 
+    for (int i = 0; i < 4; i++) {
+        if (sfx_hallucination[i]) { 
+            audio_free_sfx(sfx_hallucination[i]); 
+            sfx_hallucination[i] = NULL; 
+        }
+    }
 }

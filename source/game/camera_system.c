@@ -1,17 +1,27 @@
 #include "game/camera_system.h"
 #include "game/assets.h"
 #include "engine/graphics.h"
+#include "game/animatronics.h"
 #include "engine/audio.h"
 #include "engine/input.h"
 #include <SDL2/SDL.h>
+#include <stdlib.h> 
 
 static const float CAM_ANIM_SPEED = 0.5f;
 static float cam_frame = 0.0f;
 static bool cam_open = false;
+extern int current_night;
 
 static SDL_Texture* tex_cam[CAM_FRAMES] = {NULL};
 static SDL_Texture* tex_button_cam = NULL; 
 static SDL_Texture* tex_rooms[11] = {NULL}; 
+static SDL_Texture* tex_rooms_bonnie[11] = {NULL}; 
+static SDL_Texture* tex_stage_no_bonnie = NULL;    
+static SDL_Texture* tex_west_hall_dark = NULL;
+static SDL_Texture* tex_dining_bonnie_close = NULL;
+static SDL_Texture* tex_backstage_bonnie_close = NULL;
+static SDL_Texture* tex_bonnie_twitch_1 = NULL;
+static SDL_Texture* tex_bonnie_twitch_2 = NULL;
 
 // --- ESTÁTICA Y BLIP ---
 static SDL_Texture* tex_static[8] = {NULL};
@@ -49,7 +59,7 @@ static const SDL_Rect txt_rects[11] = {
 // Nombres de las salas
 static const SDL_Rect room_name_rects[11] = {
     {832, 292, 217, 26}, {832, 292, 239, 26}, {832, 292, 228, 24}, {832, 292, 192, 26}, 
-    {832, 292, 305, 26}, {832, 292, 195, 26}, {832, 292, 192, 26}, {832, 292, 305, 26}, 
+    {832, 292, 305, 26}, {832, 292, 284, 26}, {832, 292, 192, 26}, {832, 292, 305, 26}, 
     {832, 292, 195, 26}, {832, 292, 151, 26}, {832, 292, 196, 26}
 };
 
@@ -65,12 +75,14 @@ static float rec_blink_frame = 0.0f;
 static const float UI_ANIM_SPEED = 0.02f;
 static int map_frame = 0;
 static bool rec_visible = true;
+static bool is_backstage_bonnie_close = false; // Variable del Easter Egg
 
 static Mix_Chunk* sfx_cam_up = NULL;
 static Mix_Chunk* sfx_cam_down = NULL;
 static Mix_Chunk* sfx_cam_blip = NULL;      
 static Mix_Chunk* sfx_cam_static = NULL;    
 static int channel_cam_static = -1;
+static Mix_Chunk* sfx_garble[3] = {NULL};
 
 void camera_system_init(void) {
     tex_button_cam = graphics_load_texture(IMG_BUTTON_CAM);
@@ -104,12 +116,25 @@ void camera_system_init(void) {
     tex_rooms[CAM_6]  = NULL; 
     tex_rooms[CAM_7]  = graphics_load_texture(IMG_RESTROOMS_1);
 
+    tex_rooms_bonnie[CAM_1A] = graphics_load_texture(IMG_SHOW_STAGE_1); 
+    tex_rooms_bonnie[CAM_1B] = graphics_load_texture(IMG_DINNING_AREA_2); 
+    tex_rooms_bonnie[CAM_2A] = graphics_load_texture(IMG_WEST_HALL_3); 
+    tex_rooms_bonnie[CAM_2B] = graphics_load_texture(IMG_WEST_HALL_CORNER_2); 
+    tex_rooms_bonnie[CAM_3]  = graphics_load_texture(IMG_SUPPLY_CLOSET_2); 
+    tex_rooms_bonnie[CAM_5]  = graphics_load_texture(IMG_BACKSTAGE_2);
+
     tex_map[0] = graphics_load_texture(IMG_MAP_1);
     tex_map[1] = graphics_load_texture(IMG_MAP_2);
     tex_cam_border = graphics_load_texture(IMG_CAM_BORDER);
     tex_rec = graphics_load_texture(IMG_REC);
     tex_btn_normal = graphics_load_texture(IMG_CAM_1);
     tex_btn_selected = graphics_load_texture(IMG_CAM_2);
+    tex_stage_no_bonnie = graphics_load_texture(IMG_SHOW_STAGE_2); 
+    tex_west_hall_dark  = graphics_load_texture(IMG_WEST_HALL_2);
+    tex_dining_bonnie_close = graphics_load_texture(IMG_DINNING_AREA_3);
+    tex_backstage_bonnie_close = graphics_load_texture(IMG_BACKSTAGE_3);
+    tex_bonnie_twitch_1 = graphics_load_texture(IMG_WEST_HALL_CORNER_3); 
+    tex_bonnie_twitch_2 = graphics_load_texture(IMG_WEST_HALL_CORNER_4);
 
     const char* paths_txt[11] = { IMG_1A, IMG_1B, IMG_1C, IMG_2A, IMG_2B, IMG_3, IMG_4A, IMG_4B, IMG_5, IMG_6, IMG_7 };
     for (int i = 0; i < 11; i++) tex_cam_txt[i] = graphics_load_texture(paths_txt[i]);
@@ -125,15 +150,20 @@ void camera_system_init(void) {
     sfx_cam_blip = audio_load_sfx("romfs:/sfx/blip3.wav"); 
     sfx_cam_static = audio_load_sfx("romfs:/sfx/MiniDV_Tape_Eject_1.wav");
 
+    sfx_garble[0] = audio_load_sfx("romfs:/sfx/garble1.wav");
+    sfx_garble[1] = audio_load_sfx("romfs:/sfx/garble2.wav");
+    sfx_garble[2] = audio_load_sfx("romfs:/sfx/garble3.wav");
+
     if (sfx_cam_static) {
         channel_cam_static = audio_play_sfx_loop_chunk(sfx_cam_static);
-        audio_set_channel_volume(channel_cam_static, 0); // Empieza a volumen 0
+        audio_set_channel_volume(channel_cam_static, 0); 
     }
 
     cam_open = false; cam_frame = 0.0f; static_frame = 0.0f; current_cam = CAM_1A;
     cam_pan_x = 0.0f; cam_pan_dir = 1; cam_pause_timer = 0; 
     map_anim_frame = 0.0f; rec_blink_frame = 0.0f;
     map_frame = 0; rec_visible = true; is_blipping = false; blip_anim_frame = 0.0f;
+    is_backstage_bonnie_close = false;
 }
 
 void camera_system_update(void) {
@@ -147,58 +177,58 @@ void camera_system_update(void) {
         CameraID next_cam = current_cam;
         if (input_get_button_down(HidNpadButton_Up)) {
             switch(current_cam) {
-                case CAM_5:  next_cam = CAM_1A; break; // 5 -> 1A
-                case CAM_1B: next_cam = CAM_1A; break; // 1B -> 1A
-                case CAM_7:  next_cam = CAM_1A; break; // 7 -> 1A
-                case CAM_1C: next_cam = CAM_1B; break; // 1C -> 1B
-                case CAM_2A: next_cam = CAM_1C; break; // 2A -> 1C
-                case CAM_3:  next_cam = CAM_1C; break; // 3 -> 1C
-                case CAM_2B: next_cam = CAM_2A; break; // 2B -> 2A
-                case CAM_6:  next_cam = CAM_7;  break; // 6 -> 7
-                case CAM_4A: next_cam = CAM_1C; break; // 4A -> 1C
-                case CAM_4B: next_cam = CAM_4A; break; // 4B -> 4A
+                case CAM_5:  next_cam = CAM_1A; break; 
+                case CAM_1B: next_cam = CAM_1A; break; 
+                case CAM_7:  next_cam = CAM_1A; break; 
+                case CAM_1C: next_cam = CAM_1B; break; 
+                case CAM_2A: next_cam = CAM_1C; break; 
+                case CAM_3:  next_cam = CAM_1C; break; 
+                case CAM_2B: next_cam = CAM_2A; break; 
+                case CAM_6:  next_cam = CAM_7;  break; 
+                case CAM_4A: next_cam = CAM_1C; break; 
+                case CAM_4B: next_cam = CAM_4A; break; 
                 default: break;
             }
         }
         else if (input_get_button_down(HidNpadButton_Down)) {
             switch(current_cam) {
-                case CAM_1A: next_cam = CAM_1B; break; // 1A -> 1B
-                case CAM_5:  next_cam = CAM_1C; break; // 5 -> 1C
-                case CAM_1B: next_cam = CAM_1C; break; // 1B -> 1C
-                case CAM_7:  next_cam = CAM_6;  break; // 7 -> 6
-                case CAM_1C: next_cam = CAM_2A; break; // 1C -> 2A
-                case CAM_2A: next_cam = CAM_2B; break; // 2A -> 2B
-                case CAM_4A: next_cam = CAM_4B; break; // 4A -> 4B
-                case CAM_3:  next_cam = CAM_2A; break; // 3 -> 2A
-                case CAM_6:  next_cam = CAM_4A; break; // 6 -> 4A
+                case CAM_1A: next_cam = CAM_1B; break; 
+                case CAM_5:  next_cam = CAM_1C; break; 
+                case CAM_1B: next_cam = CAM_1C; break; 
+                case CAM_7:  next_cam = CAM_6;  break; 
+                case CAM_1C: next_cam = CAM_2A; break; 
+                case CAM_2A: next_cam = CAM_2B; break; 
+                case CAM_4A: next_cam = CAM_4B; break; 
+                case CAM_3:  next_cam = CAM_2A; break; 
+                case CAM_6:  next_cam = CAM_4A; break; 
                 default: break;
             }
         }
         else if (input_get_button_down(HidNpadButton_Left)) {
             switch(current_cam) {
-                case CAM_1A: next_cam = CAM_5;  break; // 1A -> 5
-                case CAM_1B: next_cam = CAM_5;  break; // 1B -> 5
-                case CAM_7:  next_cam = CAM_1B; break; // 7 -> 1B
-                case CAM_1C: next_cam = CAM_5;  break; // 1C -> 5
-                case CAM_2A: next_cam = CAM_3;  break; // 2A -> 3
-                case CAM_2B: next_cam = CAM_3;  break; // 2B -> 3
-                case CAM_6:  next_cam = CAM_4A; break; // 6 -> 4A
-                case CAM_4A: next_cam = CAM_2A; break; // 4A -> 2A
-                case CAM_4B: next_cam = CAM_2B; break; // 4B -> 2B
+                case CAM_1A: next_cam = CAM_5;  break; 
+                case CAM_1B: next_cam = CAM_5;  break; 
+                case CAM_7:  next_cam = CAM_1B; break; 
+                case CAM_1C: next_cam = CAM_5;  break; 
+                case CAM_2A: next_cam = CAM_3;  break; 
+                case CAM_2B: next_cam = CAM_3;  break; 
+                case CAM_6:  next_cam = CAM_4A; break; 
+                case CAM_4A: next_cam = CAM_2A; break; 
+                case CAM_4B: next_cam = CAM_2B; break; 
                 default: break;
             }
         }
         else if (input_get_button_down(HidNpadButton_Right)) {
             switch(current_cam) {
-                case CAM_1A: next_cam = CAM_7;  break; // 1A -> 7
-                case CAM_5:  next_cam = CAM_1B; break; // 5 -> 1B
-                case CAM_1B: next_cam = CAM_7;  break; // 1B -> 7
-                case CAM_1C: next_cam = CAM_7;  break; // 1C -> 7
-                case CAM_3:  next_cam = CAM_2A; break; // 3 -> 2A
-                case CAM_2A: next_cam = CAM_4A; break; // 2A -> 4A
-                case CAM_2B: next_cam = CAM_4B; break; // 2B -> 4B
-                case CAM_4A: next_cam = CAM_6;  break; // 4A -> 6
-                case CAM_4B: next_cam = CAM_6;  break; // 4B -> 6
+                case CAM_1A: next_cam = CAM_7;  break; 
+                case CAM_5:  next_cam = CAM_1B; break; 
+                case CAM_1B: next_cam = CAM_7;  break; 
+                case CAM_1C: next_cam = CAM_7;  break; 
+                case CAM_3:  next_cam = CAM_2A; break; 
+                case CAM_2A: next_cam = CAM_4A; break; 
+                case CAM_2B: next_cam = CAM_4B; break; 
+                case CAM_4A: next_cam = CAM_6;  break; 
+                case CAM_4B: next_cam = CAM_6;  break; 
                 default: break;
             }
         }
@@ -264,9 +294,92 @@ void camera_system_draw_room(void) {
                 SDL_RenderCopy(renderer, tex_kitchen_sound, NULL, &dst_sound);
             }
         } else {
-            // Dibujar fondo normal con paneo
-            SDL_Rect src_rect = {(int)cam_pan_x, 0, 1280, 720};
-            SDL_RenderCopy(renderer, tex_rooms[current_cam], &src_rect, NULL);
+            
+            // --- PUNTO 3: Bajamos la variable aquí para saber dónde está Bonnie ---
+            int bonnie_room = animatronics_get_bonnie_room();
+            // ----------------------------------------------------------------------
+
+            // --- RELOJ INTERNO DE 50ms (ESTILO CLICKTEAM FUSION) ---
+            static Uint64 last_fx_time = 0;
+            static int current_twitch_frame = 0;
+
+            Uint64 current_time = SDL_GetTicks64();
+            if (current_time - last_fx_time >= 50) { 
+                // Cada 50ms exactos tiramos los dados
+                current_twitch_frame = rand() % 3;     // Dado de 3 caras para los espasmos
+                
+                // --- PUNTO 3: AUDIO DE ESPASMOS ---
+                // Si Bonnie está en la esquina (2B), es noche 4+ y le estamos mirando...
+                if (current_cam == CAM_2B && bonnie_room == CAM_2B && current_night >= 4) {
+                    // Tiramos un dado de 10% de probabilidad CADA 50 MILISEGUNDOS
+                    if (rand() % 100 < 10) {
+                        int r_snd = rand() % 3; // Elegimos garble1, garble2 o garble3
+                        if (sfx_garble[r_snd]) {
+                            // Ponemos volumen moderado para no reventar los oídos
+                            audio_set_sfx_volume(sfx_garble[r_snd], 60); 
+                            audio_play_sfx_chunk(sfx_garble[r_snd]);
+                        }
+                    }
+                }
+                // ----------------------------------
+
+                last_fx_time = current_time;
+            }
+            // --------------------------------------------------------
+
+            // --- NUEVA LÓGICA DE DIBUJADO DE HABITACIONES ---
+            SDL_Texture* bg_to_draw = tex_rooms[current_cam]; // Por defecto, vacía
+
+            // 1. Manejo especial del Show Stage (1A)
+            if (current_cam == CAM_1A) {
+                if (bonnie_room == CAM_1A) {
+                    bg_to_draw = tex_rooms_bonnie[CAM_1A]; // Todos en el escenario
+                } else {
+                    bg_to_draw = tex_stage_no_bonnie; // Bonnie se ha ido
+                }
+            }
+            // 2. Si Bonnie está en la cámara que estamos mirando
+            else if (bonnie_room == current_cam && tex_rooms_bonnie[current_cam] != NULL) {
+                
+                int bonnie_pose = animatronics_get_bonnie_pose();
+
+                // Lógica de dos poses fijas para Dining Area (1B)
+                if (current_cam == CAM_1B) {
+                    bg_to_draw = (bonnie_pose == 1) ? tex_dining_bonnie_close : tex_rooms_bonnie[CAM_1B];
+                }
+                // Lógica de dos poses fijas para Backstage (5) - DADO AL ABRIR CÁMARA
+                else if (current_cam == CAM_5) {
+                    bg_to_draw = (is_backstage_bonnie_close) ? tex_backstage_bonnie_close : tex_rooms_bonnie[CAM_5];
+                }
+                // Lógica de ESPASMOS en West Hall Corner (2B) - Solo Noche 4+
+                else if (current_cam == CAM_2B) {
+                    if (current_night >= 4) {
+                        if (current_twitch_frame == 0) bg_to_draw = tex_rooms_bonnie[CAM_2B];
+                        else if (current_twitch_frame == 1) bg_to_draw = tex_bonnie_twitch_1;
+                        else bg_to_draw = tex_bonnie_twitch_2;
+                    } else {
+                        // Noches 1, 2 y 3: Se queda quieto
+                        bg_to_draw = tex_rooms_bonnie[CAM_2B];
+                    }
+                }
+                // Para CAM_3 (Armario) y CAM_2A (Pasillo) dibujamos la foto normal de Bonnie
+                else {
+                    bg_to_draw = tex_rooms_bonnie[current_cam];
+                }
+            }
+
+            // 3. Efecto de parpadeo en el pasillo izquierdo (CAM 2A)
+            if (current_cam == CAM_2A) {
+                if (rand() % 100 < 70) {
+                    bg_to_draw = tex_west_hall_dark; 
+                }
+            }
+
+            // 4. Dibujar el fondo elegido con su paneo correspondiente
+            if (bg_to_draw) {
+                SDL_Rect src_rect = {(int)cam_pan_x, 0, 1280, 720};
+                SDL_RenderCopy(renderer, bg_to_draw, &src_rect, NULL);
+            }
         }
 
         // 2. Dibujar Estática por encima (Declaramos s_idx UNA SOLA VEZ aquí)
@@ -302,6 +415,24 @@ void camera_system_draw_ui(void) {
             if (btn_tex) SDL_RenderCopy(renderer, btn_tex, NULL, &btn_rects[i]);
             if (tex_cam_txt[i]) SDL_RenderCopy(renderer, tex_cam_txt[i], NULL, &txt_rects[i]);
         }
+
+        // --- NUEVO: RASTREADOR GPS DE BONNIE ---
+        int bonnie_room = animatronics_get_bonnie_room();
+        
+        // Nos aseguramos de que esté en una cámara normal (0 a 10) y no en la puerta u oficina
+        if (bonnie_room >= 0 && bonnie_room < 11) {
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            
+            // Color Índigo (R: 100, G: 0, B: 255) con transparencia (Alpha: 150)
+            SDL_SetRenderDrawColor(renderer, 100, 0, 255, 150); 
+            
+            // Dibujamos el rectángulo encima del botón de la cámara donde está Bonnie
+            SDL_RenderFillRect(renderer, &btn_rects[bonnie_room]);
+            
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+        }
+        // ---------------------------------------
+
         if (tex_room_names[current_cam]) {
             SDL_RenderCopy(renderer, tex_room_names[current_cam], NULL, &room_name_rects[current_cam]);
         }
@@ -330,21 +461,38 @@ void camera_system_draw_animation(void) {
 void camera_system_cleanup(void) {
     if (tex_button_cam) SDL_DestroyTexture(tex_button_cam);
     if (tex_kitchen_sound) SDL_DestroyTexture(tex_kitchen_sound);
-    for (int i = 0; i < CAM_FRAMES; i++) if (tex_cam[i]) SDL_DestroyTexture(tex_cam[i]);
-    for (int i = 0; i < 8; i++) if (tex_static[i]) SDL_DestroyTexture(tex_static[i]);
+    
+    for (int i = 0; i < CAM_FRAMES; i++) {
+        if (tex_cam[i]) SDL_DestroyTexture(tex_cam[i]);
+    }
+    
+    for (int i = 0; i < 8; i++) {
+        if (tex_static[i]) SDL_DestroyTexture(tex_static[i]);
+    }
+    
     for (int i = 0; i < 11; i++) {
         if (tex_rooms[i]) SDL_DestroyTexture(tex_rooms[i]);
+        if (tex_rooms_bonnie[i]) SDL_DestroyTexture(tex_rooms_bonnie[i]); 
         if (tex_cam_txt[i]) SDL_DestroyTexture(tex_cam_txt[i]);
         if (tex_room_names[i]) SDL_DestroyTexture(tex_room_names[i]);
     }
+
     if (tex_map[0]) SDL_DestroyTexture(tex_map[0]);
     if (tex_map[1]) SDL_DestroyTexture(tex_map[1]);
     if (tex_cam_border) SDL_DestroyTexture(tex_cam_border);
     if (tex_rec) SDL_DestroyTexture(tex_rec);
     if (tex_btn_normal) SDL_DestroyTexture(tex_btn_normal);
     if (tex_btn_selected) SDL_DestroyTexture(tex_btn_selected);
-    if (sfx_cam_up) audio_free_sfx(sfx_cam_up);
-    if (sfx_cam_down) audio_free_sfx(sfx_cam_down);
+
+    // Texturas especiales de Bonnie y las salas
+    if (tex_stage_no_bonnie) SDL_DestroyTexture(tex_stage_no_bonnie);
+    if (tex_west_hall_dark) SDL_DestroyTexture(tex_west_hall_dark);
+    if (tex_dining_bonnie_close) SDL_DestroyTexture(tex_dining_bonnie_close);
+    if (tex_backstage_bonnie_close) SDL_DestroyTexture(tex_backstage_bonnie_close);
+    if (tex_bonnie_twitch_1) SDL_DestroyTexture(tex_bonnie_twitch_1);
+    if (tex_bonnie_twitch_2) SDL_DestroyTexture(tex_bonnie_twitch_2);
+
+    // Audio 
     if (sfx_cam_up) audio_free_sfx(sfx_cam_up);
     if (sfx_cam_down) audio_free_sfx(sfx_cam_down);
     if (sfx_cam_static) {
@@ -352,6 +500,15 @@ void camera_system_cleanup(void) {
         audio_free_sfx(sfx_cam_static);
     }
     if (sfx_cam_blip) audio_free_sfx(sfx_cam_blip);
+
+    // --- PUNTO 4: Limpiar sonidos de espasmo ---
+    for (int i = 0; i < 3; i++) {
+        if (sfx_garble[i]) {
+            audio_free_sfx(sfx_garble[i]);
+            sfx_garble[i] = NULL;
+        }
+    }
+    // -------------------------------------------
 }
 
 void camera_system_toggle(void) {
@@ -361,6 +518,11 @@ void camera_system_toggle(void) {
             audio_play_sfx_chunk(sfx_cam_up);
             is_blipping = true; blip_anim_frame = 0.0f;
             audio_set_channel_volume(channel_cam_static, 100);
+
+            // --- NUEVO: DADO DE PANTALLA RARA (10%) ---
+            is_backstage_bonnie_close = (rand() % 100 < 10);
+            // ------------------------------------------
+
         } else {
             audio_play_sfx_chunk(sfx_cam_down);
             audio_set_channel_volume(channel_cam_static, 0);

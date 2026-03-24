@@ -1,11 +1,13 @@
 #include "game/hud.h"
 #include "game/assets.h"
+#include "game/animatronics.h"
 #include "engine/graphics.h"
 #include <SDL2/SDL.h>
 
 // Variables (las declaramos aquí, el 'extern' del .h hace que los demás puedan verlas)
 int current_night = 1;
 int current_hour = 0;
+static int previous_hour = 0;
 static Uint64 night_start_time = 0;
 
 static SDL_Texture* tex_night_text = NULL;
@@ -34,6 +36,7 @@ void hud_init(void) {
 
     // Inicialización de tiempo
     current_hour = 0;
+    previous_hour = 0;
     night_start_time = SDL_GetTicks64();
 }
 
@@ -41,6 +44,11 @@ void hud_update(void) {
     Uint64 current_time = SDL_GetTicks64();
     // Calculamos la hora 
     current_hour = (current_time - night_start_time) / 86000;
+
+    if (current_hour > previous_hour) {
+        animatronics_on_hour_changed(current_hour);
+        previous_hour = current_hour;
+    }
 }
 
 void hud_draw(bool cam_open, float cam_frame) {

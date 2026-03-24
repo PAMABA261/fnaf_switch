@@ -86,6 +86,7 @@
 #define IMG_OFFICE_LIGHT_R            GFX_PATH "127.png" //Luz derecha encendida
 #define IMG_OFFICE_BLACK_OUT          GFX_PATH "304.png" //Apagón
 #define IMG_OFFICE_BLACK_OUT_FREDDY   GFX_PATH "305.png" //Apagón con Freddy en la puerta
+#define IMG_OFFICE_BONNIE             GFX_PATH "225.png" //Bonnie en la puerta izquierda
 
 // Animación del ventilador
 #define IMG_FAN_1                     GFX_PATH "57.png"
@@ -184,15 +185,26 @@
 #define IMG_BATTERY_PERCENT           GFX_PATH "208.png" 
 
 // Cámaras
-#define IMG_SHOW_STAGE_1              GFX_PATH "19.png" //Freddy, Bonnie y Chica
+#define IMG_SHOW_STAGE_1              GFX_PATH "19.png" // Freddy, Bonnie y Chica
+#define IMG_SHOW_STAGE_2              GFX_PATH "68.png" // Freddy y Chica
 #define IMG_DINNING_AREA_1            GFX_PATH "48.png"
+#define IMG_DINNING_AREA_2            GFX_PATH "90.png" // Bonnie
+#define IMG_DINNING_AREA_3            GFX_PATH "120.png" // Bonnie más cerca
 #define IMG_PIRATE_COVE_1             GFX_PATH "66.png"
-#define IMG_WEST_HALL_1               GFX_PATH "44.png"
+#define IMG_WEST_HALL_1               GFX_PATH "44.png" // Luz encendida
+#define IMG_WEST_HALL_2               GFX_PATH "43.png" // Luz apagada
+#define IMG_WEST_HALL_3               GFX_PATH "206.png" // Bonnie
 #define IMG_WEST_HALL_CORNER_1        GFX_PATH "0.png"
+#define IMG_WEST_HALL_CORNER_2        GFX_PATH "188.png" // Bonnie
+#define IMG_WEST_HALL_CORNER_3        GFX_PATH "478.png" // Bonnie twitching
+#define IMG_WEST_HALL_CORNER_4        GFX_PATH "479.png" // Bonnie twitching
 #define IMG_SUPPLY_CLOSET_1           GFX_PATH "62.png"
+#define IMG_SUPPLY_CLOSET_2           GFX_PATH "190.png" // Bonnie
 #define IMG_EAST_HALL_1               GFX_PATH "67.png"
 #define IMG_EAST_HALL_CORNER_1        GFX_PATH "49.png"
 #define IMG_BACKSTAGE_1               GFX_PATH "83.png"
+#define IMG_BACKSTAGE_2               GFX_PATH "205.png" // Bonnie
+#define IMG_BACKSTAGE_3               GFX_PATH "555.png" // Bonie más cerca de la cámara
 #define IMG_RESTROOMS_1               GFX_PATH "41.png" 
 
 #define IMG_MAP_1                     GFX_PATH "164.png"
@@ -249,7 +261,13 @@
 #define IMG_FREDDY_JUMPSCARE_BLACKOUT_20 GFX_PATH "324.png"
 #define IMG_FREDDY_JUMPSCARE_BLACKOUT_21 GFX_PATH "325.png"
 
-//Transición 5AM-6AM
+// Transición 5AM-6AM
 #define IMG_6AM_5                     GFX_PATH "350.png" // 5
 #define IMG_6AM_6                     GFX_PATH "351.png" // 6
 #define IMG_6AM_AM                    GFX_PATH "352.png" // AM
+
+// --- ALUCINACIONES ---
+#define IMG_FREDDY_HALLUTINATION      GFX_PATH "525.png"
+#define IMG_ITS_ME_1                  GFX_PATH "543.png"
+#define IMG_BONNIE_HALLUTINATION      GFX_PATH "520.png"
+#define IMG_ITS_ME_2                  GFX_PATH "544.png"

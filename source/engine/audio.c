@@ -6,8 +6,8 @@ bool audio_init(void) {
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
         return false; 
     }
-    // Reservamos 16 canales para efectos de sonido. 
-    Mix_AllocateChannels(16);
+    // Reservamos 32 canales para efectos de sonido. 
+    Mix_AllocateChannels(32);
     
     return true;
 }
