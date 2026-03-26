@@ -261,6 +261,19 @@
 #define IMG_FREDDY_JUMPSCARE_BLACKOUT_20 GFX_PATH "324.png"
 #define IMG_FREDDY_JUMPSCARE_BLACKOUT_21 GFX_PATH "325.png"
 
+// JUMPSCARE BONNIE
+#define IMG_BONNIE_JUMPSCARE_1           GFX_PATH "300.png"
+#define IMG_BONNIE_JUMPSCARE_2           GFX_PATH "301.png"
+#define IMG_BONNIE_JUMPSCARE_3           GFX_PATH "291.png"
+#define IMG_BONNIE_JUMPSCARE_4           GFX_PATH "299.png"
+#define IMG_BONNIE_JUMPSCARE_5           GFX_PATH "303.png"
+#define IMG_BONNIE_JUMPSCARE_6           GFX_PATH "293.png"
+#define IMG_BONNIE_JUMPSCARE_7           GFX_PATH "294.png"
+#define IMG_BONNIE_JUMPSCARE_8           GFX_PATH "295.png"
+#define IMG_BONNIE_JUMPSCARE_9           GFX_PATH "296.png"
+#define IMG_BONNIE_JUMPSCARE_10          GFX_PATH "297.png"
+#define IMG_BONNIE_JUMPSCARE_11          GFX_PATH "298.png"
+
 // Transición 5AM-6AM
 #define IMG_6AM_5                     GFX_PATH "350.png" // 5
 #define IMG_6AM_6                     GFX_PATH "351.png" // 6

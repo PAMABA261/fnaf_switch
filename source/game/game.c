@@ -9,6 +9,7 @@
 #include "engine/audio.h"
 #include <stdlib.h>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
 
 // Entorno de la Oficina
 static float camera_x = 160.0f;
@@ -54,6 +55,7 @@ static Mix_Chunk* sfx_door = NULL;
 static int channel_light_L = -1;
 static int channel_light_R = -1;
 static int channel_fan = -1; 
+static int channel_breath = -1;
 
 static Mix_Chunk* sfx_circus = NULL;
 static Mix_Chunk* sfx_pounding = NULL;
@@ -61,16 +63,29 @@ static Mix_Chunk* sfx_hallucination[4] = {NULL};
 static Mix_Chunk* sfx_window_scare = NULL; 
 static Mix_Chunk* sfx_error = NULL;
 
+static Mix_Chunk* sfx_breath[4] = {NULL}; 
+static int breath_timer = 0; 
 static bool bonnie_scare_played = false; 
 
+// --- LÓGICA DEL JUMPSCARE DE BONNIE ---
+#define JUMPSCARE_BONNIE_FRAMES 11
+static SDL_Texture* tex_bonnie_jumpscare[JUMPSCARE_BONNIE_FRAMES] = {NULL};
+static Mix_Chunk* sfx_jumpscare = NULL;
+
+static bool is_bonnie_jumpscare = false;
+static float bonnie_jumpscare_frame = 0.0f;
+static const float JUMPSCARE_ANIM_SPEED = 0.75f; // Speed a 75
+static int bonnie_force_down_timer = 0; 
+static int jumpscare_duration_timer = 0;
+
 void game_init(void) {
-    // 1. INICIALIZAR SUBSISTEMAS
+    Mix_AllocateChannels(32); 
+
     hud_init(); 
     power_system_init(); 
     camera_system_init(); 
     animatronics_init(current_night);
 
-    // 2. CARGA DE GRÁFICOS DE LA OFICINA
     tex_office_normal = graphics_load_texture(IMG_OFFICE);
     tex_office_light_L = graphics_load_texture(IMG_OFFICE_LIGHT_L);
     tex_office_light_R = graphics_load_texture(IMG_OFFICE_LIGHT_R);
@@ -121,7 +136,16 @@ void game_init(void) {
         }
     }
 
-    // 3. CARGA DE AUDIO DE LA OFICINA
+    const char* paths_bonnie_js[JUMPSCARE_BONNIE_FRAMES] = {
+        IMG_BONNIE_JUMPSCARE_1, IMG_BONNIE_JUMPSCARE_2, IMG_BONNIE_JUMPSCARE_3,
+        IMG_BONNIE_JUMPSCARE_4, IMG_BONNIE_JUMPSCARE_5, IMG_BONNIE_JUMPSCARE_6,
+        IMG_BONNIE_JUMPSCARE_7, IMG_BONNIE_JUMPSCARE_8, IMG_BONNIE_JUMPSCARE_9,
+        IMG_BONNIE_JUMPSCARE_10, IMG_BONNIE_JUMPSCARE_11
+    };
+    for (int i = 0; i < JUMPSCARE_BONNIE_FRAMES; i++) {
+        tex_bonnie_jumpscare[i] = graphics_load_texture(paths_bonnie_js[i]);
+    }
+
     sfx_fan = audio_load_sfx("romfs:/sfx/Buzz_Fan_Florescent2.wav");
     sfx_light = audio_load_sfx("romfs:/sfx/BallastHumMedium2.wav");
     sfx_door = audio_load_sfx("romfs:/sfx/SFXBible_12478.wav");
@@ -131,12 +155,18 @@ void game_init(void) {
     sfx_window_scare = audio_load_sfx("romfs:/sfx/windowscare.wav"); 
     sfx_error = audio_load_sfx("romfs:/sfx/error.wav");
 
+    sfx_breath[0] = audio_load_sfx("romfs:/sfx/Vocals_Breaths_S_35972006.wav");
+    sfx_breath[1] = audio_load_sfx("romfs:/sfx/Vocals_Breaths_S_35972008.wav");
+    sfx_breath[2] = audio_load_sfx("romfs:/sfx/Vocals_Breaths_S_35972012.wav");
+    sfx_breath[3] = audio_load_sfx("romfs:/sfx/Vocals_Breaths_S_35972014.wav");
+
     sfx_hallucination[0] = audio_load_sfx("romfs:/sfx/COMPUTER_DIGITAL_L2076505.wav");
     sfx_hallucination[1] = audio_load_sfx("romfs:/sfx/garble1.wav");
     sfx_hallucination[2] = audio_load_sfx("romfs:/sfx/garble2.wav");
     sfx_hallucination[3] = audio_load_sfx("romfs:/sfx/garble3.wav");
 
-    // 4. INICIALIZACIÓN DE VARIABLES
+    sfx_jumpscare = audio_load_sfx("romfs:/sfx/XSCREAM.wav");
+
     camera_x = 160.0f;
     door_L_frame = 0.0f;
     door_R_frame = 0.0f;
@@ -150,8 +180,14 @@ void game_init(void) {
     win_fade = 0.0f;
     random_sound_timer = 0;
     bonnie_scare_played = false; 
+    breath_timer = 0; 
+    channel_breath = -1;
 
-    // 5. REPRODUCCIÓN DE AUDIO INICIAL
+    is_bonnie_jumpscare = false;
+    bonnie_jumpscare_frame = 0.0f;
+    bonnie_force_down_timer = 0;
+    jumpscare_duration_timer = 0;
+
     audio_play_music("romfs:/sfx/ColdPresc_B.wav");
     audio_set_music_volume(50); 
     if (sfx_fan) {
@@ -161,6 +197,22 @@ void game_init(void) {
 }
 
 void game_update(void) {
+    if (is_bonnie_jumpscare) {
+        bonnie_jumpscare_frame += JUMPSCARE_ANIM_SPEED;
+        
+        // Loop back to index 0 (Logic: 1:1)
+        if (bonnie_jumpscare_frame >= JUMPSCARE_BONNIE_FRAMES) {
+            bonnie_jumpscare_frame = 0.0f; 
+        }
+
+        // Timer para volver al menu
+        jumpscare_duration_timer++;
+        if (jumpscare_duration_timer >= 85) {
+            state_manager_change(STATE_TITLE); 
+        }
+        return; 
+    }
+
     // 1. ACTUALIZAR SUBSISTEMAS
     hud_update();
     camera_system_update();
@@ -219,7 +271,6 @@ void game_update(void) {
         }
     }
     
-    // Alucinaciones...
     if (!is_power_out) {
         animatronics_update(left_door_on, right_door_on, camera_system_is_open());
         
@@ -248,9 +299,53 @@ void game_update(void) {
             if ((rand() % 2) == 0) current_hallucination = rand() % 4; 
             else current_hallucination = -1; 
         } else current_hallucination = -1; 
+
+        if (animatronics_get_bonnie_room() == ROOM_OFFICE) {
+            // Respiración si cámara arriba
+            if (camera_system_is_open()) {
+                breath_timer++;
+                if (breath_timer >= 300) {
+                    breath_timer = 0;
+                    if (channel_breath == -1 || !Mix_Playing(channel_breath)) {
+                        if (rand() % 3 == 0) {
+                            int r_breath = rand() % 4; 
+                            if (sfx_breath[r_breath]) {
+                                audio_set_sfx_volume(sfx_breath[r_breath], 100); 
+                                channel_breath = audio_play_sfx_chunk(sfx_breath[r_breath]);
+                            }
+                        }
+                    }
+                }
+                
+                // Gatillo 30s Forzado
+                bonnie_force_down_timer++;
+            }
+
+            // GATILLO DE MUERTE
+            bool trigger_death = false;
+            if (input_get_button_down(HidNpadButton_A) && camera_system_is_open()) trigger_death = true;
+            if (bonnie_force_down_timer >= 1800) trigger_death = true;
+
+            if (trigger_death && !is_bonnie_jumpscare) {
+                is_bonnie_jumpscare = true;
+                camera_system_force_close();
+                audio_stop_all_sfx();
+                audio_stop_music();
+                if (sfx_jumpscare) {
+                    audio_set_sfx_volume(sfx_jumpscare, 100);
+                    audio_play_sfx_chunk(sfx_jumpscare);
+                }
+            }
+        } else {
+            breath_timer = 0;
+            bonnie_force_down_timer = 0; 
+        }
+        
     } else {
         hallucination_timer = 0; 
         current_hallucination = -1;
+        breath_timer = 0;
+        bonnie_force_down_timer = 0;
     }
     
     if (!camera_system_is_open() && camera_system_get_frame() <= 0.0f) {
@@ -308,6 +403,7 @@ void game_update(void) {
                 }
             }
         } 
+        
         if (input_get_button_down(HidNpadButton_A)) {
             camera_system_toggle();
             if (camera_system_is_open()) {
@@ -325,7 +421,6 @@ void game_update(void) {
     }
 
     fan_timer++;
-    // Solo animamos el ventilador si hay energía
     if (!is_power_out && fan_timer >= FAN_ANIM_SPEED) {
         fan_timer = 0;
         fan_frame++;
@@ -386,7 +481,7 @@ void game_draw(void) {
         SDL_RenderCopy(renderer, tex_door_R_close[current_R], NULL, &dst_R);
     }
 
-    // DIBUJAR CÁMARA DE SEGURIDAD (Capa de fondo)
+    // DIBUJAR CÁMARA DE SEGURIDAD
     camera_system_draw_room();
     camera_system_draw_ui();
     camera_system_draw_animation();
@@ -435,6 +530,19 @@ void game_draw(void) {
         }
     }
 
+    // --- CAPA FINAL JUMPSCARE CENTRADO FIJO ---
+    if (is_bonnie_jumpscare) {
+        int frame = (int)bonnie_jumpscare_frame;
+        if (frame >= JUMPSCARE_BONNIE_FRAMES) frame = JUMPSCARE_BONNIE_FRAMES - 1; 
+
+        if (tex_bonnie_jumpscare[frame]) {
+            // (1600 - 1280) / 2 = 160. Siempre usamos el centro fijo
+            SDL_Rect src_jumpscare = {160, 0, 1280, 720}; 
+            SDL_Rect dst_jumpscare = {0, 0, 1280, 720}; 
+            SDL_RenderCopy(renderer, tex_bonnie_jumpscare[frame], &src_jumpscare, &dst_jumpscare);
+        }
+    }
+
     if (is_winning) {
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, (Uint8)win_fade);
@@ -475,8 +583,16 @@ void game_cleanup(void) {
         }
     }
 
+    for (int i = 0; i < JUMPSCARE_BONNIE_FRAMES; i++) {
+        if (tex_bonnie_jumpscare[i]) { 
+            SDL_DestroyTexture(tex_bonnie_jumpscare[i]); 
+            tex_bonnie_jumpscare[i] = NULL; 
+        }
+    }
+
     audio_stop_music();
     audio_stop_all_sfx();
+    
     if (sfx_fan) { audio_free_sfx(sfx_fan); sfx_fan = NULL; }
     if (sfx_light) { audio_free_sfx(sfx_light); sfx_light = NULL; }
     if (sfx_door) { audio_free_sfx(sfx_door); sfx_door = NULL; }
@@ -484,10 +600,19 @@ void game_cleanup(void) {
     if (sfx_pounding) audio_free_sfx(sfx_pounding);
     if (sfx_window_scare) { audio_free_sfx(sfx_window_scare); sfx_window_scare = NULL; } 
     if (sfx_error) { audio_free_sfx(sfx_error); sfx_error = NULL; } 
+
+    for (int i = 0; i < 4; i++) {
+        if (sfx_breath[i]) { 
+            audio_free_sfx(sfx_breath[i]); 
+            sfx_breath[i] = NULL; 
+        }
+    }
     for (int i = 0; i < 4; i++) {
         if (sfx_hallucination[i]) { 
             audio_free_sfx(sfx_hallucination[i]); 
             sfx_hallucination[i] = NULL; 
         }
     }
+    
+    if (sfx_jumpscare) { audio_free_sfx(sfx_jumpscare); sfx_jumpscare = NULL; }
 }
