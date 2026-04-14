@@ -87,6 +87,7 @@
 #define IMG_OFFICE_BLACK_OUT          GFX_PATH "304.png" //Apagón
 #define IMG_OFFICE_BLACK_OUT_FREDDY   GFX_PATH "305.png" //Apagón con Freddy en la puerta
 #define IMG_OFFICE_BONNIE             GFX_PATH "225.png" //Bonnie en la puerta izquierda
+#define IMG_OFFICE_CHICA              GFX_PATH "227.png" //Chica en la puerta derecha
 
 // Animación del ventilador
 #define IMG_FAN_1                     GFX_PATH "57.png"
@@ -187,9 +188,13 @@
 // Cámaras
 #define IMG_SHOW_STAGE_1              GFX_PATH "19.png" // Freddy, Bonnie y Chica
 #define IMG_SHOW_STAGE_2              GFX_PATH "68.png" // Freddy y Chica
+#define IMG_SHOW_STAGE_3              GFX_PATH "223.png" // Freddy y Bonnie
+#define IMG_SHOW_STAGE_4              GFX_PATH "224.png" // Freddy
 #define IMG_DINNING_AREA_1            GFX_PATH "48.png"
 #define IMG_DINNING_AREA_2            GFX_PATH "90.png" // Bonnie
 #define IMG_DINNING_AREA_3            GFX_PATH "120.png" // Bonnie más cerca
+#define IMG_DINNING_AREA_4            GFX_PATH "215.png" // Chica
+#define IMG_DINNING_AREA_5            GFX_PATH "222.png" // Chica más cerca
 #define IMG_PIRATE_COVE_1             GFX_PATH "66.png"
 #define IMG_WEST_HALL_1               GFX_PATH "44.png" // Luz encendida
 #define IMG_WEST_HALL_2               GFX_PATH "43.png" // Luz apagada
@@ -201,11 +206,20 @@
 #define IMG_SUPPLY_CLOSET_1           GFX_PATH "62.png"
 #define IMG_SUPPLY_CLOSET_2           GFX_PATH "190.png" // Bonnie
 #define IMG_EAST_HALL_1               GFX_PATH "67.png"
+#define IMG_EAST_HALL_2               GFX_PATH "221.png" // Chica
+#define IMG_EAST_HALL_3               GFX_PATH "226.png" // Chica más cerca
 #define IMG_EAST_HALL_CORNER_1        GFX_PATH "49.png"
+#define IMG_EAST_HALL_CORNER_2        GFX_PATH "220.png" // Chica
+#define IMG_EAST_HALL_CORNER_3        GFX_PATH "476.png" // Chica twitching
+#define IMG_EAST_HALL_CORNER_4        GFX_PATH "451.png" // Chica twitching
 #define IMG_BACKSTAGE_1               GFX_PATH "83.png"
 #define IMG_BACKSTAGE_2               GFX_PATH "205.png" // Bonnie
 #define IMG_BACKSTAGE_3               GFX_PATH "555.png" // Bonie más cerca de la cámara
 #define IMG_RESTROOMS_1               GFX_PATH "41.png" 
+#define IMG_RESTROOMS_2               GFX_PATH "217.png" // Chica
+#define IMG_RESTROOMS_3               GFX_PATH "219.png" // Chica más cerca
+
+
 
 #define IMG_MAP_1                     GFX_PATH "164.png"
 #define IMG_MAP_2                     GFX_PATH "145.png"

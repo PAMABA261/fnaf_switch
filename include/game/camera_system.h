@@ -25,3 +25,4 @@ void camera_system_toggle(void);
 void camera_system_force_close(void);
 bool camera_system_is_open(void);
 float camera_system_get_frame(void);
+int camera_system_get_current_cam(void);
