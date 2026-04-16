@@ -38,6 +38,8 @@ include $(DEVKITPRO)/libnx/switch_rules
 #   NACP building is skipped as well.
 #---------------------------------------------------------------------------------
 APP_TITLE	:=	Five Nights at Freddy's
+APP_AUTHOR  	:= 	Scott Cawthon
+APP_VERSION 	:= 	1.0.0
 TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build
 SOURCES 	:= 	source source/engine source/game

@@ -17,11 +17,15 @@ void animatronics_cleanup(void);
 // Getters para saber dónde están
 int animatronics_get_bonnie_room(void);
 int animatronics_get_bonnie_pose(void);
+int animatronics_get_bonnie_moved_timer(void);
+int animatronics_get_bonnie_prev_room(void);
 
 int animatronics_get_chica_room(void);
 int animatronics_get_chica_pose(void);
-
-int animatronics_get_bonnie_moved_timer(void);
 int animatronics_get_chica_moved_timer(void);
+int animatronics_get_chica_prev_room(void);
 
+int animatronics_get_freddy_room(void);
+int animatronics_get_freddy_prev_room(void);
+int animatronics_get_freddy_moved_timer(void);
 #endif

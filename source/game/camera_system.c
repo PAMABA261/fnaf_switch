@@ -35,6 +35,10 @@ static SDL_Texture* tex_east_hall_chica_close = NULL;
 static SDL_Texture* tex_chica_twitch_1 = NULL;
 static SDL_Texture* tex_chica_twitch_2 = NULL;
 
+// Variables de Freddy
+static SDL_Texture* tex_stage_nobody = NULL;
+static SDL_Texture* tex_rooms_freddy[11] = {NULL};
+
 // --- ESTÁTICA Y BLIP ---
 static SDL_Texture* tex_static[8] = {NULL};
 static float static_frame = 0.0f;
@@ -42,6 +46,7 @@ static float static_frame = 0.0f;
 static SDL_Texture* tex_blip[9] = {NULL};
 static bool is_blipping = false;
 static float blip_anim_frame = 0.0f;
+static int cam_blackout_timer = 0; // --- AÑADIDO: El temporizador de apagón real
 
 // --- GRÁFICOS DE LA UI ---
 static SDL_Texture* tex_map[2] = {NULL};
@@ -106,7 +111,7 @@ void camera_system_init(void) {
         tex_static[i] = graphics_load_texture(paths_static[i]);
         if (tex_static[i]) {
             SDL_SetTextureBlendMode(tex_static[i], SDL_BLENDMODE_BLEND);
-            SDL_SetTextureAlphaMod(tex_static[i], 55); 
+            SDL_SetTextureAlphaMod(tex_static[i], 55); // Siempre fija a 55
         }
     }
 
@@ -122,7 +127,7 @@ void camera_system_init(void) {
     tex_rooms[CAM_4A] = graphics_load_texture(IMG_EAST_HALL_1);
     tex_rooms[CAM_4B] = graphics_load_texture(IMG_EAST_HALL_CORNER_1);
     tex_rooms[CAM_5]  = graphics_load_texture(IMG_BACKSTAGE_1);
-    tex_rooms[CAM_6]  = NULL; // Cocina
+    tex_rooms[CAM_6]  = NULL; 
     tex_rooms[CAM_7]  = graphics_load_texture(IMG_RESTROOMS_1);
 
     tex_rooms_bonnie[CAM_1A] = graphics_load_texture(IMG_SHOW_STAGE_1); 
@@ -159,6 +164,12 @@ void camera_system_init(void) {
     tex_btn_normal = graphics_load_texture(IMG_CAM_1);
     tex_btn_selected = graphics_load_texture(IMG_CAM_2);
 
+    tex_stage_nobody = graphics_load_texture(IMG_SHOW_STAGE_5);
+    tex_rooms_freddy[CAM_1B] = graphics_load_texture(IMG_DINNING_AREA_6);
+    tex_rooms_freddy[CAM_7]  = graphics_load_texture(IMG_RESTROOMS_4);
+    tex_rooms_freddy[CAM_4A] = graphics_load_texture(IMG_EAST_HALL_4);
+    tex_rooms_freddy[CAM_4B] = graphics_load_texture(IMG_EAST_HALL_CORNER_5);
+
     const char* paths_txt[11] = { IMG_1A, IMG_1B, IMG_1C, IMG_2A, IMG_2B, IMG_3, IMG_4A, IMG_4B, IMG_5, IMG_6, IMG_7 };
     for (int i = 0; i < 11; i++) tex_cam_txt[i] = graphics_load_texture(paths_txt[i]);
 
@@ -186,6 +197,7 @@ void camera_system_init(void) {
     map_anim_frame = 0.0f; rec_blink_frame = 0.0f;
     map_frame = 0; rec_visible = true; is_blipping = false; blip_anim_frame = 0.0f;
     is_backstage_bonnie_close = false;
+    cam_blackout_timer = 0; // Inicializado
 }
 
 void camera_system_update(void) {
@@ -262,11 +274,12 @@ void camera_system_update(void) {
             audio_play_sfx_chunk(sfx_cam_blip);
         }
 
+        // --- LÓGICA DE APAGÓN DE SCOTT ---
         static bool bonnie_interfered = false;
         if (animatronics_get_bonnie_moved_timer() > 0) {
-            if (current_cam == animatronics_get_bonnie_room() && !bonnie_interfered) {
+            if ((current_cam == animatronics_get_bonnie_room() || current_cam == animatronics_get_bonnie_prev_room()) && !bonnie_interfered) {
                 bonnie_interfered = true;
-                is_blipping = true; blip_anim_frame = 0.0f;
+                cam_blackout_timer = 60; // 60 frames (1 segundo) de cámara negra
                 int r_snd = rand() % 3; 
                 if (sfx_garble[r_snd]) {
                     audio_set_sfx_volume(sfx_garble[r_snd], 100); 
@@ -279,9 +292,9 @@ void camera_system_update(void) {
 
         static bool chica_interfered = false;
         if (animatronics_get_chica_moved_timer() > 0) {
-            if (current_cam == animatronics_get_chica_room() && !chica_interfered) {
+            if ((current_cam == animatronics_get_chica_room() || current_cam == animatronics_get_chica_prev_room()) && !chica_interfered) {
                 chica_interfered = true;
-                is_blipping = true; blip_anim_frame = 0.0f; 
+                cam_blackout_timer = 60; // 60 frames (1 segundo) de cámara negra
                 int r_snd = rand() % 3; 
                 if (sfx_garble[r_snd]) {
                     audio_set_sfx_volume(sfx_garble[r_snd], 100); 
@@ -290,6 +303,11 @@ void camera_system_update(void) {
             }
         } else {
             chica_interfered = false;
+        }
+
+        // Restamos el temporizador
+        if (cam_blackout_timer > 0) {
+            cam_blackout_timer--;
         }
 
         if (is_blipping) {
@@ -335,14 +353,10 @@ void camera_system_draw_room(void) {
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
             SDL_Rect fullscreen = {0, 0, 1280, 720};
             SDL_RenderFillRect(renderer, &fullscreen);
-
-            if (current_cam == CAM_6 && tex_kitchen_sound) {
-                SDL_Rect dst_sound = {464, 69, 371, 54};
-                SDL_RenderCopy(renderer, tex_kitchen_sound, NULL, &dst_sound);
-            }
         } else {
             int bonnie_room = animatronics_get_bonnie_room();
             int chica_room = animatronics_get_chica_room();
+            int freddy_room = animatronics_get_freddy_room(); // <-- NUEVO
 
             static Uint64 last_fx_time = 0;
             static int current_twitch_frame = 1; 
@@ -355,75 +369,96 @@ void camera_system_draw_room(void) {
 
             SDL_Texture* bg_to_draw = tex_rooms[current_cam];
 
+            // 1. LÓGICA DEL SHOW STAGE (CAM_1A)
             if (current_cam == CAM_1A) {
-                if (bonnie_room == CAM_1A && chica_room == CAM_1A) bg_to_draw = tex_rooms[CAM_1A];
-                else if (bonnie_room != CAM_1A && chica_room == CAM_1A) bg_to_draw = tex_stage_no_bonnie;
-                else if (bonnie_room == CAM_1A && chica_room != CAM_1A) bg_to_draw = tex_stage_no_chica;
-                else bg_to_draw = tex_stage_freddy_only;
+                if (bonnie_room == CAM_1A && chica_room == CAM_1A && freddy_room == CAM_1A) bg_to_draw = tex_rooms[CAM_1A];
+                else if (bonnie_room != CAM_1A && chica_room == CAM_1A && freddy_room == CAM_1A) bg_to_draw = tex_stage_no_bonnie;
+                else if (bonnie_room == CAM_1A && chica_room != CAM_1A && freddy_room == CAM_1A) bg_to_draw = tex_stage_no_chica;
+                else if (bonnie_room != CAM_1A && chica_room != CAM_1A && freddy_room == CAM_1A) bg_to_draw = tex_stage_freddy_only;
+                else bg_to_draw = tex_stage_nobody; 
             }
-            else if (bonnie_room == current_cam && tex_rooms_bonnie[current_cam] != NULL) {
-                int bonnie_pose = animatronics_get_bonnie_pose();
-                if (current_cam == CAM_1B) {
-                    bg_to_draw = (bonnie_pose == 1) ? tex_dining_bonnie_close : tex_rooms_bonnie[CAM_1B];
-                } else if (current_cam == CAM_5) {
-                    bg_to_draw = (is_backstage_bonnie_close) ? tex_backstage_bonnie_close : tex_rooms_bonnie[CAM_5];
-                } else if (current_cam == CAM_2B) {
-                    if (current_night >= 4) {
-                        if (current_twitch_frame < 25) bg_to_draw = tex_rooms_bonnie[CAM_2B];
-                        else if (current_twitch_frame < 29) bg_to_draw = tex_bonnie_twitch_1;
-                        else bg_to_draw = tex_bonnie_twitch_2;
-                    } else {
-                        bg_to_draw = tex_rooms_bonnie[CAM_2B];
-                    }
-                } else if (current_cam != CAM_2A) { // Evitamos machacar CAM_2A aquí
-                    bg_to_draw = tex_rooms_bonnie[current_cam];
+            else {
+                // 2. CAPA DE FREDDY (Se dibuja primero, por si los demás están en la sala y lo tapan)
+                if (freddy_room == current_cam && tex_rooms_freddy[current_cam] != NULL) {
+                    bg_to_draw = tex_rooms_freddy[current_cam];
                 }
-            }
-            else if (chica_room == current_cam && tex_rooms_chica[current_cam] != NULL) {
-                int chica_pose = animatronics_get_chica_pose();
-                if (current_cam == CAM_1B) {
-                    bg_to_draw = (chica_pose == 1) ? tex_dining_chica_close : tex_rooms_chica[CAM_1B];
-                } else if (current_cam == CAM_7) {
-                    bg_to_draw = (chica_pose == 1) ? tex_restrooms_chica_close : tex_rooms_chica[CAM_7];
-                } else if (current_cam == CAM_4A) {
-                    bg_to_draw = (chica_pose == 1) ? tex_east_hall_chica_close : tex_rooms_chica[CAM_4A];
-                } else if (current_cam == CAM_4B) {
-                    if (current_night >= 4) {
-                        if (current_twitch_frame < 25) bg_to_draw = tex_rooms_chica[CAM_4B];
-                        else if (current_twitch_frame < 29) bg_to_draw = tex_chica_twitch_1;
-                        else bg_to_draw = tex_chica_twitch_2;
-                    } else {
-                        bg_to_draw = tex_rooms_chica[CAM_4B];
-                    }
-                } else {
-                    bg_to_draw = tex_rooms_chica[current_cam];
-                }
-            }
 
-            // --- LÓGICA CORREGIDA PARA EL PASILLO 2A (ESTROBOSCOPIO) ---
-            if (current_cam == CAM_2A) {
-                // El pasillo 2A está casi siempre a oscuras.
-                if (rand() % 100 < 70) {
-                    // 70% del tiempo: Oscuridad total. Si Bonnie está ahí, se camufla en las sombras.
-                    bg_to_draw = tex_west_hall_dark; 
-                } else {
-                    // 30% del tiempo: ¡Chispazo de luz!
-                    if (bonnie_room == CAM_2A) {
-                        bg_to_draw = tex_rooms_bonnie[CAM_2A]; // ¡Pillaste a Bonnie iluminado!
+                // 3. CAPA DE BONNIE (Sobrescribe la cámara, incluyendo a Freddy)
+                if (bonnie_room == current_cam && tex_rooms_bonnie[current_cam] != NULL) {
+                    int bonnie_pose = animatronics_get_bonnie_pose();
+                    if (current_cam == CAM_1B) {
+                        bg_to_draw = (bonnie_pose == 1) ? tex_dining_bonnie_close : tex_rooms_bonnie[CAM_1B];
+                    } else if (current_cam == CAM_5) {
+                        bg_to_draw = (is_backstage_bonnie_close) ? tex_backstage_bonnie_close : tex_rooms_bonnie[CAM_5];
+                    } else if (current_cam == CAM_2B) {
+                        if (current_night >= 4) {
+                            if (current_twitch_frame < 25) bg_to_draw = tex_rooms_bonnie[CAM_2B];
+                            else if (current_twitch_frame < 29) bg_to_draw = tex_bonnie_twitch_1;
+                            else bg_to_draw = tex_bonnie_twitch_2;
+                        } else {
+                            bg_to_draw = tex_rooms_bonnie[CAM_2B];
+                        }
+                    } else if (current_cam != CAM_2A) { 
+                        bg_to_draw = tex_rooms_bonnie[current_cam];
+                    }
+                }
+                // 4. CAPA DE CHICA (Sobrescribe la cámara, incluyendo a Freddy)
+                else if (chica_room == current_cam && tex_rooms_chica[current_cam] != NULL) {
+                    int chica_pose = animatronics_get_chica_pose();
+                    if (current_cam == CAM_1B) {
+                        bg_to_draw = (chica_pose == 1) ? tex_dining_chica_close : tex_rooms_chica[CAM_1B];
+                    } else if (current_cam == CAM_7) {
+                        bg_to_draw = (chica_pose == 1) ? tex_restrooms_chica_close : tex_rooms_chica[CAM_7];
+                    } else if (current_cam == CAM_4A) {
+                        bg_to_draw = (chica_pose == 1) ? tex_east_hall_chica_close : tex_rooms_chica[CAM_4A];
+                    } else if (current_cam == CAM_4B) {
+                        if (current_night >= 4) {
+                            if (current_twitch_frame < 25) bg_to_draw = tex_rooms_chica[CAM_4B];
+                            else if (current_twitch_frame < 29) bg_to_draw = tex_chica_twitch_1;
+                            else bg_to_draw = tex_chica_twitch_2;
+                        } else {
+                            bg_to_draw = tex_rooms_chica[CAM_4B];
+                        }
                     } else {
-                        bg_to_draw = tex_rooms[CAM_2A]; // Pasillo vacío e iluminado
+                        bg_to_draw = tex_rooms_chica[current_cam];
+                    }
+                }
+
+                // 5. LÓGICA ESPECIAL DEL PASILLO OESTE (CAM_2A)
+                if (current_cam == CAM_2A) {
+                    if (rand() % 100 < 70) {
+                        bg_to_draw = tex_west_hall_dark; 
+                    } else {
+                        if (bonnie_room == CAM_2A) {
+                            bg_to_draw = tex_rooms_bonnie[CAM_2A]; 
+                        } else {
+                            bg_to_draw = tex_rooms[CAM_2A]; 
+                        }
                     }
                 }
             }
 
             if (bg_to_draw) {
-                SDL_Rect src_rect = {(int)cam_pan_x, 0, 1280, 720};
-                SDL_RenderCopy(renderer, bg_to_draw, &src_rect, NULL);
+                // --- EL APAGÓN VISUAL ---
+                if (cam_blackout_timer > 0) {
+                    // Magia de Scott: en lugar de dibujar la habitación, rellena la pantalla de negro
+                    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+                    SDL_Rect black_screen = {0, 0, 1280, 720};
+                    SDL_RenderFillRect(renderer, &black_screen);
+                } else {
+                    // Si no hay apagón, dibuja la foto de la cámara normal
+                    SDL_Rect src_rect = {(int)cam_pan_x, 0, 1280, 720};
+                    SDL_RenderCopy(renderer, bg_to_draw, &src_rect, NULL);
+                }
             }
         }
 
         int s_idx = (int)static_frame;
-        if (tex_static[s_idx]) SDL_RenderCopy(renderer, tex_static[s_idx], NULL, NULL);
+        if (tex_static[s_idx]) {
+            // La estática se dibuja siempre encima con su opacidad original
+            SDL_SetTextureAlphaMod(tex_static[s_idx], 55); 
+            SDL_RenderCopy(renderer, tex_static[s_idx], NULL, NULL);
+        }
 
         if (is_blipping) {
             int b_idx = (int)blip_anim_frame;
@@ -437,6 +472,12 @@ void camera_system_draw_room(void) {
 void camera_system_draw_ui(void) {
     if (cam_open && cam_frame >= (CAM_FRAMES - 1)) {
         SDL_Renderer* renderer = graphics_get_renderer();
+        
+        if (current_cam == CAM_6 && tex_kitchen_sound) {
+            SDL_Rect dst_sound = {464, 69, 371, 54};
+            SDL_RenderCopy(renderer, tex_kitchen_sound, NULL, &dst_sound);
+        }
+
         if (tex_cam_border) SDL_RenderCopy(renderer, tex_cam_border, NULL, NULL);
         if (tex_rec && rec_visible) {
             SDL_Rect dst_rec = {68, 52, 50, 50};
@@ -452,6 +493,7 @@ void camera_system_draw_ui(void) {
             if (tex_cam_txt[i]) SDL_RenderCopy(renderer, tex_cam_txt[i], NULL, &txt_rects[i]);
         }
 
+        // Localizador Bonnie
         int bonnie_room = animatronics_get_bonnie_room();
         if (bonnie_room >= 0 && bonnie_room < 11) {
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
@@ -460,11 +502,21 @@ void camera_system_draw_ui(void) {
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
         }
 
+        // Localizador Chica
         int chica_room = animatronics_get_chica_room();
         if (chica_room >= 0 && chica_room < 11) {
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
             SDL_SetRenderDrawColor(renderer, 255, 255, 0, 150); 
             SDL_RenderFillRect(renderer, &btn_rects[chica_room]);
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+        }
+
+        // Localizador Freddy
+        int freddy_room = animatronics_get_freddy_room();
+        if (freddy_room >= 0 && freddy_room < 11) {
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            SDL_SetRenderDrawColor(renderer, 139, 69, 19, 150); 
+            SDL_RenderFillRect(renderer, &btn_rects[freddy_room]);
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
         }
 
@@ -509,6 +561,7 @@ void camera_system_cleanup(void) {
         if (tex_rooms_chica[i]) SDL_DestroyTexture(tex_rooms_chica[i]); 
         if (tex_cam_txt[i]) SDL_DestroyTexture(tex_cam_txt[i]);
         if (tex_room_names[i]) SDL_DestroyTexture(tex_room_names[i]);
+        if (tex_rooms_freddy[i]) SDL_DestroyTexture(tex_rooms_freddy[i]);
     }
 
     if (tex_map[0]) SDL_DestroyTexture(tex_map[0]);

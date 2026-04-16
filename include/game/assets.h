@@ -190,11 +190,13 @@
 #define IMG_SHOW_STAGE_2              GFX_PATH "68.png" // Freddy y Chica
 #define IMG_SHOW_STAGE_3              GFX_PATH "223.png" // Freddy y Bonnie
 #define IMG_SHOW_STAGE_4              GFX_PATH "224.png" // Freddy
+#define IMG_SHOW_STAGE_5              GFX_PATH "484.png" // Nadie
 #define IMG_DINNING_AREA_1            GFX_PATH "48.png"
 #define IMG_DINNING_AREA_2            GFX_PATH "90.png" // Bonnie
 #define IMG_DINNING_AREA_3            GFX_PATH "120.png" // Bonnie más cerca
 #define IMG_DINNING_AREA_4            GFX_PATH "215.png" // Chica
 #define IMG_DINNING_AREA_5            GFX_PATH "222.png" // Chica más cerca
+#define IMG_DINNING_AREA_6            GFX_PATH "492.png" // Freddy
 #define IMG_PIRATE_COVE_1             GFX_PATH "66.png"
 #define IMG_WEST_HALL_1               GFX_PATH "44.png" // Luz encendida
 #define IMG_WEST_HALL_2               GFX_PATH "43.png" // Luz apagada
@@ -208,18 +210,19 @@
 #define IMG_EAST_HALL_1               GFX_PATH "67.png"
 #define IMG_EAST_HALL_2               GFX_PATH "221.png" // Chica
 #define IMG_EAST_HALL_3               GFX_PATH "226.png" // Chica más cerca
+#define IMG_EAST_HALL_4               GFX_PATH "487.png" // Freddy
 #define IMG_EAST_HALL_CORNER_1        GFX_PATH "49.png"
 #define IMG_EAST_HALL_CORNER_2        GFX_PATH "220.png" // Chica
 #define IMG_EAST_HALL_CORNER_3        GFX_PATH "476.png" // Chica twitching
 #define IMG_EAST_HALL_CORNER_4        GFX_PATH "451.png" // Chica twitching
+#define IMG_EAST_HALL_CORNER_5        GFX_PATH "486.png" // Fredyy
 #define IMG_BACKSTAGE_1               GFX_PATH "83.png"
 #define IMG_BACKSTAGE_2               GFX_PATH "205.png" // Bonnie
 #define IMG_BACKSTAGE_3               GFX_PATH "555.png" // Bonie más cerca de la cámara
 #define IMG_RESTROOMS_1               GFX_PATH "41.png" 
 #define IMG_RESTROOMS_2               GFX_PATH "217.png" // Chica
 #define IMG_RESTROOMS_3               GFX_PATH "219.png" // Chica más cerca
-
-
+#define IMG_RESTROOMS_4               GFX_PATH "494.png" // Freddy
 
 #define IMG_MAP_1                     GFX_PATH "164.png"
 #define IMG_MAP_2                     GFX_PATH "145.png"
@@ -275,6 +278,39 @@
 #define IMG_FREDDY_JUMPSCARE_BLACKOUT_20 GFX_PATH "324.png"
 #define IMG_FREDDY_JUMPSCARE_BLACKOUT_21 GFX_PATH "325.png"
 
+// JUMPSCARE FREDDY
+#define IMG_FREDDY_JUMPSCARE_1           GFX_PATH "519.png"
+#define IMG_FREDDY_JUMPSCARE_2           GFX_PATH "485.png"
+#define IMG_FREDDY_JUMPSCARE_3           GFX_PATH "521.png"
+#define IMG_FREDDY_JUMPSCARE_4           GFX_PATH "489.png"
+#define IMG_FREDDY_JUMPSCARE_5           GFX_PATH "490.png"
+#define IMG_FREDDY_JUMPSCARE_6           GFX_PATH "491.png"
+#define IMG_FREDDY_JUMPSCARE_7           GFX_PATH "493.png"
+#define IMG_FREDDY_JUMPSCARE_8           GFX_PATH "495.png"
+#define IMG_FREDDY_JUMPSCARE_9           GFX_PATH "496.png"
+#define IMG_FREDDY_JUMPSCARE_10          GFX_PATH "497.png"
+#define IMG_FREDDY_JUMPSCARE_11          GFX_PATH "498.png"
+#define IMG_FREDDY_JUMPSCARE_12          GFX_PATH "499.png"
+#define IMG_FREDDY_JUMPSCARE_13          GFX_PATH "500.png"
+#define IMG_FREDDY_JUMPSCARE_14          GFX_PATH "501.png"
+#define IMG_FREDDY_JUMPSCARE_15          GFX_PATH "502.png"
+#define IMG_FREDDY_JUMPSCARE_16          GFX_PATH "503.png"
+#define IMG_FREDDY_JUMPSCARE_17          GFX_PATH "504.png"
+#define IMG_FREDDY_JUMPSCARE_18          GFX_PATH "505.png"
+#define IMG_FREDDY_JUMPSCARE_19          GFX_PATH "506.png"
+#define IMG_FREDDY_JUMPSCARE_20          GFX_PATH "507.png"
+#define IMG_FREDDY_JUMPSCARE_21          GFX_PATH "508.png"
+#define IMG_FREDDY_JUMPSCARE_22          GFX_PATH "509.png"
+#define IMG_FREDDY_JUMPSCARE_23          GFX_PATH "510.png"
+#define IMG_FREDDY_JUMPSCARE_24          GFX_PATH "511.png"
+#define IMG_FREDDY_JUMPSCARE_25          GFX_PATH "512.png"
+#define IMG_FREDDY_JUMPSCARE_26          GFX_PATH "513.png"
+#define IMG_FREDDY_JUMPSCARE_27          GFX_PATH "514.png"
+#define IMG_FREDDY_JUMPSCARE_28          GFX_PATH "515.png"
+#define IMG_FREDDY_JUMPSCARE_29          GFX_PATH "516.png"
+#define IMG_FREDDY_JUMPSCARE_30          GFX_PATH "517.png"
+#define IMG_FREDDY_JUMPSCARE_31          GFX_PATH "518.png"
+
 // JUMPSCARE BONNIE
 #define IMG_BONNIE_JUMPSCARE_1           GFX_PATH "300.png"
 #define IMG_BONNIE_JUMPSCARE_2           GFX_PATH "301.png"
@@ -287,6 +323,24 @@
 #define IMG_BONNIE_JUMPSCARE_9           GFX_PATH "296.png"
 #define IMG_BONNIE_JUMPSCARE_10          GFX_PATH "297.png"
 #define IMG_BONNIE_JUMPSCARE_11          GFX_PATH "298.png"
+
+// JUMPSCARE CHICA
+#define IMG_CHICA_JUMPSCARE_1            GFX_PATH "65.png"
+#define IMG_CHICA_JUMPSCARE_2            GFX_PATH "69.png"
+#define IMG_CHICA_JUMPSCARE_3            GFX_PATH "216.png"
+#define IMG_CHICA_JUMPSCARE_4            GFX_PATH "228.png"
+#define IMG_CHICA_JUMPSCARE_5            GFX_PATH "229.png"
+#define IMG_CHICA_JUMPSCARE_6            GFX_PATH "230.png"
+#define IMG_CHICA_JUMPSCARE_7            GFX_PATH "231.png"
+#define IMG_CHICA_JUMPSCARE_8            GFX_PATH "232.png"
+#define IMG_CHICA_JUMPSCARE_9            GFX_PATH "233.png"
+#define IMG_CHICA_JUMPSCARE_10           GFX_PATH "234.png"
+#define IMG_CHICA_JUMPSCARE_11           GFX_PATH "281.png"
+#define IMG_CHICA_JUMPSCARE_12           GFX_PATH "235.png"
+#define IMG_CHICA_JUMPSCARE_13           GFX_PATH "236.png"
+#define IMG_CHICA_JUMPSCARE_14           GFX_PATH "237.png"
+#define IMG_CHICA_JUMPSCARE_15           GFX_PATH "239.png"
+#define IMG_CHICA_JUMPSCARE_16           GFX_PATH "279.png"
 
 // Transición 5AM-6AM
 #define IMG_6AM_5                     GFX_PATH "350.png" // 5
