@@ -274,7 +274,6 @@ void camera_system_update(void) {
             audio_play_sfx_chunk(sfx_cam_blip);
         }
 
-        // --- LÓGICA DE APAGÓN DE SCOTT ---
         static bool bonnie_interfered = false;
         if (animatronics_get_bonnie_moved_timer() > 0) {
             if ((current_cam == animatronics_get_bonnie_room() || current_cam == animatronics_get_bonnie_prev_room()) && !bonnie_interfered) {
@@ -303,6 +302,21 @@ void camera_system_update(void) {
             }
         } else {
             chica_interfered = false;
+        }
+
+        static bool freddy_interfered = false;
+        if (animatronics_get_freddy_moved_timer() > 0) {
+            if ((current_cam == animatronics_get_freddy_room() || current_cam == animatronics_get_freddy_prev_room()) && !freddy_interfered) {
+                freddy_interfered = true;
+                cam_blackout_timer = 60; // 60 frames (1 segundo) de cámara negra
+                int r_snd = rand() % 3; 
+                if (sfx_garble[r_snd]) {
+                    audio_set_sfx_volume(sfx_garble[r_snd], 100); 
+                    audio_play_sfx_chunk(sfx_garble[r_snd]);
+                }
+            }
+        } else {
+            freddy_interfered = false;
         }
 
         // Restamos el temporizador

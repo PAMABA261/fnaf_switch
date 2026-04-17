@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <SDL2/SDL.h>
 
-int power_left = 999;
+int power_left = 99;
 int current_usage = 1;
 bool is_power_out = false;
 int powerout_state = 0;
@@ -32,7 +32,12 @@ static Mix_Chunk* sfx_powerdown = NULL;
 static Mix_Chunk* sfx_musicbox = NULL;
 static Mix_Chunk* sfx_jumpscare = NULL;
 static Mix_Chunk* sfx_ambience2 = NULL;
-static Mix_Chunk* sfx_fan_blackout = NULL; // Cargamos el ventilador aquí también para el apagón
+static Mix_Chunk* sfx_fan_blackout = NULL;
+
+// --- CAMBIO: Canales para el apagado quirúrgico ---
+static int ch_ambience2 = -1;
+static int ch_fan_blackout = -1;
+static int ch_musicbox = -1;
 
 #define CAM_FRAMES 11
 
@@ -83,7 +88,7 @@ void power_system_init(void) {
     sfx_fan_blackout = audio_load_sfx("romfs:/sfx/Buzz_Fan_Florescent2.wav");
 
     // 3. Inicialización
-    power_left = 999;
+    power_left = 99;
     current_usage = 1;
     is_power_out = false;
     powerout_state = 0;
@@ -91,6 +96,11 @@ void power_system_init(void) {
     jumpscare_frame = 0.0f;
     last_drain_time = SDL_GetTicks64();
     last_passive_drain_time = SDL_GetTicks64();
+    
+    // Resetear canales
+    ch_ambience2 = -1;
+    ch_fan_blackout = -1;
+    ch_musicbox = -1;
 }
 
 bool power_system_update(int items_on) {
@@ -129,15 +139,15 @@ bool power_system_update(int items_on) {
             powerout_state = 0;
             powerout_step_time = current_time;
             powerout_total_time = current_time;
-            just_triggered_blackout = true; // Le avisa a game.c para que abra las puertas
+            just_triggered_blackout = true; 
             
-            audio_stop_all_sfx(); 
+            // --- ELIMINADA la bomba nuclear. Solo detenemos la música de ambiente
             audio_stop_music();
             if (sfx_powerdown) audio_play_sfx_chunk(sfx_powerdown);
 
             if (sfx_ambience2) {
                 audio_set_sfx_volume(sfx_ambience2, 50);
-                audio_play_sfx_loop_chunk(sfx_ambience2);
+                ch_ambience2 = audio_play_sfx_loop_chunk(sfx_ambience2); // Guardamos canal
             }
         }
     } else {
@@ -155,7 +165,7 @@ bool power_system_update(int items_on) {
                 powerout_step_time = current_time;
                 powerout_total_time = current_time;
                 powerout_flicker_time = current_time;
-                if (sfx_musicbox) audio_play_sfx_chunk(sfx_musicbox);
+                if (sfx_musicbox) ch_musicbox = audio_play_sfx_chunk(sfx_musicbox); // Guardamos canal
             }
 
         } else if (powerout_state == 1) {
@@ -176,8 +186,12 @@ bool power_system_update(int items_on) {
                 powerout_step_time = current_time;
                 powerout_total_time = current_time;
                 show_freddy = false; 
-                audio_stop_all_sfx(); 
-                if (sfx_fan_blackout) audio_play_sfx_loop_chunk(sfx_fan_blackout); 
+                
+                // --- APAGADO QUIRÚRGICO DE LA MÚSICA DE FREDDY Y EL AMBIENTE ---
+                if (ch_musicbox != -1) audio_stop_channel(ch_musicbox);
+                if (ch_ambience2 != -1) audio_stop_channel(ch_ambience2);
+                
+                if (sfx_fan_blackout) ch_fan_blackout = audio_play_sfx_loop_chunk(sfx_fan_blackout); // Guardamos canal
             }
 
         } else if (powerout_state == 2) {
@@ -190,8 +204,9 @@ bool power_system_update(int items_on) {
                 powerout_state = 3; 
                 powerout_step_time = current_time;
                 powerout_total_time = current_time;
-                audio_stop_all_sfx(); 
-                audio_stop_music();
+                
+                // --- APAGADO QUIRÚRGICO DEL VENTILADOR ---
+                if (ch_fan_blackout != -1) audio_stop_channel(ch_fan_blackout);
             }
 
         } else if (powerout_state == 3) {
