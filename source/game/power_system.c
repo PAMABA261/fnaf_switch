@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <SDL2/SDL.h>
 
-int power_left = 99;
+int power_left = 999;
 int current_usage = 1;
 bool is_power_out = false;
 int powerout_state = 0;
@@ -88,7 +88,7 @@ void power_system_init(void) {
     sfx_fan_blackout = audio_load_sfx("romfs:/sfx/Buzz_Fan_Florescent2.wav");
 
     // 3. Inicialización
-    power_left = 99;
+    power_left = 999;
     current_usage = 1;
     is_power_out = false;
     powerout_state = 0;
@@ -309,4 +309,10 @@ void power_system_cleanup(void) {
     if (sfx_jumpscare) { audio_free_sfx(sfx_jumpscare); sfx_jumpscare = NULL; }
     if (sfx_ambience2) { audio_free_sfx(sfx_ambience2); sfx_ambience2 = NULL;}
     if (sfx_fan_blackout) { audio_free_sfx(sfx_fan_blackout); sfx_fan_blackout = NULL;}
+}
+
+void power_system_subtract_power(int amount) {
+    if (is_power_out) return;
+    power_left -= amount;
+    if (power_left < 0) power_left = 0;
 }

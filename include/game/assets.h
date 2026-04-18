@@ -198,6 +198,9 @@
 #define IMG_DINNING_AREA_5            GFX_PATH "222.png" // Chica más cerca
 #define IMG_DINNING_AREA_6            GFX_PATH "492.png" // Freddy
 #define IMG_PIRATE_COVE_1             GFX_PATH "66.png"
+#define IMG_PIRATE_COVE_2             GFX_PATH "211.png" // Foxy asomandose
+#define IMG_PIRATE_COVE_3             GFX_PATH "338.png" // Foxy completamente afuera
+#define IMG_PIRATE_COVE_4             GFX_PATH "240.png" // Pirate Cove vacia
 #define IMG_WEST_HALL_1               GFX_PATH "44.png" // Luz encendida
 #define IMG_WEST_HALL_2               GFX_PATH "43.png" // Luz apagada
 #define IMG_WEST_HALL_3               GFX_PATH "206.png" // Bonnie
@@ -341,6 +344,70 @@
 #define IMG_CHICA_JUMPSCARE_14           GFX_PATH "237.png"
 #define IMG_CHICA_JUMPSCARE_15           GFX_PATH "239.png"
 #define IMG_CHICA_JUMPSCARE_16           GFX_PATH "279.png"
+
+// JUMPSCARE FOXY
+#define IMG_FOXY_JUMPSCARE_1            GFX_PATH "413.png"
+#define IMG_FOXY_JUMPSCARE_2            GFX_PATH "242.png"
+#define IMG_FOXY_JUMPSCARE_3            GFX_PATH "415.png"
+#define IMG_FOXY_JUMPSCARE_4            GFX_PATH "243.png"
+#define IMG_FOXY_JUMPSCARE_5            GFX_PATH "396.png"
+#define IMG_FOXY_JUMPSCARE_6            GFX_PATH "397.png"
+#define IMG_FOXY_JUMPSCARE_7            GFX_PATH "398.png"
+#define IMG_FOXY_JUMPSCARE_8            GFX_PATH "399.png"
+#define IMG_FOXY_JUMPSCARE_9            GFX_PATH "400.png"
+#define IMG_FOXY_JUMPSCARE_10           GFX_PATH "401.png"
+#define IMG_FOXY_JUMPSCARE_11           GFX_PATH "402.png"
+#define IMG_FOXY_JUMPSCARE_12           GFX_PATH "403.png"
+#define IMG_FOXY_JUMPSCARE_13           GFX_PATH "404.png"
+#define IMG_FOXY_JUMPSCARE_14           GFX_PATH "405.png"
+#define IMG_FOXY_JUMPSCARE_15           GFX_PATH "406.png"
+#define IMG_FOXY_JUMPSCARE_16           GFX_PATH "407.png"
+#define IMG_FOXY_JUMPSCARE_17           GFX_PATH "408.png"
+#define IMG_FOXY_JUMPSCARE_18           GFX_PATH "409.png"
+#define IMG_FOXY_JUMPSCARE_19           GFX_PATH "410.png"
+#define IMG_FOXY_JUMPSCARE_20           GFX_PATH "411.png"
+#define IMG_FOXY_JUMPSCARE_21           GFX_PATH "412.png"
+#define IMG_FOXY_JUMPSCARE_22           GFX_PATH "412.png"
+#define IMG_FOXY_JUMPSCARE_23           GFX_PATH "412.png"
+#define IMG_FOXY_JUMPSCARE_24           GFX_PATH "412.png"
+#define IMG_FOXY_JUMPSCARE_25           GFX_PATH "412.png"
+
+
+// FOXY CORRIENDO
+#define IMG_FOXY_RUNNING_1              GFX_PATH "241.png"
+#define IMG_FOXY_RUNNING_2              GFX_PATH "241.png"
+#define IMG_FOXY_RUNNING_3              GFX_PATH "241.png"
+#define IMG_FOXY_RUNNING_4              GFX_PATH "340.png"
+#define IMG_FOXY_RUNNING_5              GFX_PATH "244.png"
+#define IMG_FOXY_RUNNING_6              GFX_PATH "245.png"
+#define IMG_FOXY_RUNNING_7              GFX_PATH "246.png"
+#define IMG_FOXY_RUNNING_8              GFX_PATH "247.png"
+#define IMG_FOXY_RUNNING_9              GFX_PATH "248.png"
+#define IMG_FOXY_RUNNING_10             GFX_PATH "250.png"
+#define IMG_FOXY_RUNNING_11             GFX_PATH "280.png"
+#define IMG_FOXY_RUNNING_12             GFX_PATH "282.png"
+#define IMG_FOXY_RUNNING_13             GFX_PATH "283.png"
+#define IMG_FOXY_RUNNING_14             GFX_PATH "284.png"
+#define IMG_FOXY_RUNNING_15             GFX_PATH "285.png"
+#define IMG_FOXY_RUNNING_16             GFX_PATH "286.png"
+#define IMG_FOXY_RUNNING_17             GFX_PATH "287.png"
+#define IMG_FOXY_RUNNING_18             GFX_PATH "288.png"
+#define IMG_FOXY_RUNNING_19             GFX_PATH "289.png"
+#define IMG_FOXY_RUNNING_20             GFX_PATH "290.png"
+#define IMG_FOXY_RUNNING_21             GFX_PATH "292.png"
+#define IMG_FOXY_RUNNING_22             GFX_PATH "302.png"
+#define IMG_FOXY_RUNNING_23             GFX_PATH "306.png"
+#define IMG_FOXY_RUNNING_24             GFX_PATH "327.png"
+#define IMG_FOXY_RUNNING_25             GFX_PATH "329.png"
+#define IMG_FOXY_RUNNING_26             GFX_PATH "330.png"
+#define IMG_FOXY_RUNNING_27             GFX_PATH "331.png"
+#define IMG_FOXY_RUNNING_28             GFX_PATH "332.png"
+#define IMG_FOXY_RUNNING_29             GFX_PATH "333.png"
+#define IMG_FOXY_RUNNING_30             GFX_PATH "334.png"
+#define IMG_FOXY_RUNNING_31             GFX_PATH "335.png"
+#define IMG_FOXY_RUNNING_32             GFX_PATH "336.png"
+#define IMG_FOXY_RUNNING_33             GFX_PATH "337.png"
+
 
 // Transición 5AM-6AM
 #define IMG_6AM_5                     GFX_PATH "350.png" // 5

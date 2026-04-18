@@ -39,6 +39,14 @@ static SDL_Texture* tex_chica_twitch_2 = NULL;
 static SDL_Texture* tex_stage_nobody = NULL;
 static SDL_Texture* tex_rooms_freddy[11] = {NULL};
 
+// --- FOXY ---
+static SDL_Texture* tex_pirate_cove[4] = {NULL};
+#define FOXY_RUN_FRAMES 33
+static SDL_Texture* tex_foxy_run[FOXY_RUN_FRAMES] = {NULL};
+static float foxy_run_frame = 0.0f;
+static Mix_Chunk* sfx_foxy_run = NULL;
+static const float foxy_run_speed = 0.65f;
+
 // --- ESTÁTICA Y BLIP ---
 static SDL_Texture* tex_static[8] = {NULL};
 static float static_frame = 0.0f;
@@ -46,7 +54,7 @@ static float static_frame = 0.0f;
 static SDL_Texture* tex_blip[9] = {NULL};
 static bool is_blipping = false;
 static float blip_anim_frame = 0.0f;
-static int cam_blackout_timer = 0; // --- AÑADIDO: El temporizador de apagón real
+static int cam_blackout_timer = 0; 
 
 // --- GRÁFICOS DE LA UI ---
 static SDL_Texture* tex_map[2] = {NULL};
@@ -111,7 +119,7 @@ void camera_system_init(void) {
         tex_static[i] = graphics_load_texture(paths_static[i]);
         if (tex_static[i]) {
             SDL_SetTextureBlendMode(tex_static[i], SDL_BLENDMODE_BLEND);
-            SDL_SetTextureAlphaMod(tex_static[i], 55); // Siempre fija a 55
+            SDL_SetTextureAlphaMod(tex_static[i], 55);
         }
     }
 
@@ -170,6 +178,27 @@ void camera_system_init(void) {
     tex_rooms_freddy[CAM_4A] = graphics_load_texture(IMG_EAST_HALL_4);
     tex_rooms_freddy[CAM_4B] = graphics_load_texture(IMG_EAST_HALL_CORNER_5);
 
+    // --- CARGAR GRÁFICOS DE FOXY ---
+    tex_pirate_cove[0] = graphics_load_texture(IMG_PIRATE_COVE_1);
+    tex_pirate_cove[1] = graphics_load_texture(IMG_PIRATE_COVE_2);
+    tex_pirate_cove[2] = graphics_load_texture(IMG_PIRATE_COVE_3);
+    tex_pirate_cove[3] = graphics_load_texture(IMG_PIRATE_COVE_4);
+
+    const char* paths_foxy_run[FOXY_RUN_FRAMES] = {
+        IMG_FOXY_RUNNING_1, IMG_FOXY_RUNNING_2, IMG_FOXY_RUNNING_3, IMG_FOXY_RUNNING_4,
+        IMG_FOXY_RUNNING_5, IMG_FOXY_RUNNING_6, IMG_FOXY_RUNNING_7, IMG_FOXY_RUNNING_8,
+        IMG_FOXY_RUNNING_9, IMG_FOXY_RUNNING_10, IMG_FOXY_RUNNING_11, IMG_FOXY_RUNNING_12,
+        IMG_FOXY_RUNNING_13, IMG_FOXY_RUNNING_14, IMG_FOXY_RUNNING_15, IMG_FOXY_RUNNING_16,
+        IMG_FOXY_RUNNING_17, IMG_FOXY_RUNNING_18, IMG_FOXY_RUNNING_19, IMG_FOXY_RUNNING_20,
+        IMG_FOXY_RUNNING_21, IMG_FOXY_RUNNING_22, IMG_FOXY_RUNNING_23, IMG_FOXY_RUNNING_24,
+        IMG_FOXY_RUNNING_25, IMG_FOXY_RUNNING_26, IMG_FOXY_RUNNING_27, IMG_FOXY_RUNNING_28,
+        IMG_FOXY_RUNNING_29, IMG_FOXY_RUNNING_30, IMG_FOXY_RUNNING_31, IMG_FOXY_RUNNING_32, 
+        IMG_FOXY_RUNNING_33
+    };
+    for (int i = 0; i < FOXY_RUN_FRAMES; i++) {
+        tex_foxy_run[i] = graphics_load_texture(paths_foxy_run[i]);
+    }
+
     const char* paths_txt[11] = { IMG_1A, IMG_1B, IMG_1C, IMG_2A, IMG_2B, IMG_3, IMG_4A, IMG_4B, IMG_5, IMG_6, IMG_7 };
     for (int i = 0; i < 11; i++) tex_cam_txt[i] = graphics_load_texture(paths_txt[i]);
 
@@ -182,6 +211,7 @@ void camera_system_init(void) {
     sfx_cam_down = audio_load_sfx("romfs:/sfx/put_down.wav");
     sfx_cam_blip = audio_load_sfx("romfs:/sfx/blip3.wav"); 
     sfx_cam_static = audio_load_sfx("romfs:/sfx/MiniDV_Tape_Eject_1.wav");
+    sfx_foxy_run = audio_load_sfx("romfs:/sfx/running fast3.wav"); // Audio Foxy Corriendo
 
     sfx_garble[0] = audio_load_sfx("romfs:/sfx/garble1.wav");
     sfx_garble[1] = audio_load_sfx("romfs:/sfx/garble2.wav");
@@ -194,10 +224,10 @@ void camera_system_init(void) {
 
     cam_open = false; cam_frame = 0.0f; static_frame = 0.0f; current_cam = CAM_1A;
     cam_pan_x = 0.0f; cam_pan_dir = 1; cam_pause_timer = 0; 
-    map_anim_frame = 0.0f; rec_blink_frame = 0.0f;
+    map_anim_frame = 0.0f; rec_blink_frame = 0.0f; foxy_run_frame = 0.0f;
     map_frame = 0; rec_visible = true; is_blipping = false; blip_anim_frame = 0.0f;
     is_backstage_bonnie_close = false;
-    cam_blackout_timer = 0; // Inicializado
+    cam_blackout_timer = 0; 
 }
 
 void camera_system_update(void) {
@@ -272,13 +302,23 @@ void camera_system_update(void) {
             is_blipping = true;
             blip_anim_frame = 0.0f;
             audio_play_sfx_chunk(sfx_cam_blip);
+
+            // --- LÓGICA DE FOXY: Disparo si miramos la 2A y él ha escapado ---
+            if (current_cam == CAM_2A && animatronics_get_foxy_state() == 3) {
+                animatronics_trigger_foxy_run(); // Cambia a estado 4
+                foxy_run_frame = 0.0f;           // Inicia la animación de correr
+                if (sfx_foxy_run) {
+                    audio_set_sfx_volume(sfx_foxy_run, 100);
+                    audio_play_sfx_chunk(sfx_foxy_run);
+                }
+            }
         }
 
         static bool bonnie_interfered = false;
         if (animatronics_get_bonnie_moved_timer() > 0) {
             if ((current_cam == animatronics_get_bonnie_room() || current_cam == animatronics_get_bonnie_prev_room()) && !bonnie_interfered) {
                 bonnie_interfered = true;
-                cam_blackout_timer = 60; // 60 frames (1 segundo) de cámara negra
+                cam_blackout_timer = 60;
                 int r_snd = rand() % 3; 
                 if (sfx_garble[r_snd]) {
                     audio_set_sfx_volume(sfx_garble[r_snd], 100); 
@@ -293,7 +333,7 @@ void camera_system_update(void) {
         if (animatronics_get_chica_moved_timer() > 0) {
             if ((current_cam == animatronics_get_chica_room() || current_cam == animatronics_get_chica_prev_room()) && !chica_interfered) {
                 chica_interfered = true;
-                cam_blackout_timer = 60; // 60 frames (1 segundo) de cámara negra
+                cam_blackout_timer = 60;
                 int r_snd = rand() % 3; 
                 if (sfx_garble[r_snd]) {
                     audio_set_sfx_volume(sfx_garble[r_snd], 100); 
@@ -308,7 +348,7 @@ void camera_system_update(void) {
         if (animatronics_get_freddy_moved_timer() > 0) {
             if ((current_cam == animatronics_get_freddy_room() || current_cam == animatronics_get_freddy_prev_room()) && !freddy_interfered) {
                 freddy_interfered = true;
-                cam_blackout_timer = 60; // 60 frames (1 segundo) de cámara negra
+                cam_blackout_timer = 60;
                 int r_snd = rand() % 3; 
                 if (sfx_garble[r_snd]) {
                     audio_set_sfx_volume(sfx_garble[r_snd], 100); 
@@ -319,7 +359,6 @@ void camera_system_update(void) {
             freddy_interfered = false;
         }
 
-        // Restamos el temporizador
         if (cam_blackout_timer > 0) {
             cam_blackout_timer--;
         }
@@ -356,6 +395,13 @@ void camera_system_update(void) {
             cam_pause_timer++;
             if (cam_pause_timer >= 100) cam_pan_dir = 1; 
         }
+
+        // --- ANIMACIÓN FOXY CORRIENDO ---
+        if (current_cam == CAM_2A && animatronics_get_foxy_state() == 4) {
+            if (foxy_run_frame < FOXY_RUN_FRAMES - 1) {
+                foxy_run_frame += foxy_run_speed; 
+            }
+        }
     }
 }
 
@@ -370,7 +416,8 @@ void camera_system_draw_room(void) {
         } else {
             int bonnie_room = animatronics_get_bonnie_room();
             int chica_room = animatronics_get_chica_room();
-            int freddy_room = animatronics_get_freddy_room(); // <-- NUEVO
+            int freddy_room = animatronics_get_freddy_room(); 
+            int foxy_state = animatronics_get_foxy_state(); // Obtenemos estado de Foxy
 
             static Uint64 last_fx_time = 0;
             static int current_twitch_frame = 1; 
@@ -391,13 +438,20 @@ void camera_system_draw_room(void) {
                 else if (bonnie_room != CAM_1A && chica_room != CAM_1A && freddy_room == CAM_1A) bg_to_draw = tex_stage_freddy_only;
                 else bg_to_draw = tex_stage_nobody; 
             }
+            // 2. LÓGICA PIRATE COVE (CAM_1C)
+            else if (current_cam == CAM_1C) {
+                if (foxy_state == 0) bg_to_draw = tex_pirate_cove[0];      // Cortina cerrada
+                else if (foxy_state == 1) bg_to_draw = tex_pirate_cove[1]; // Asomando
+                else if (foxy_state == 2) bg_to_draw = tex_pirate_cove[2]; // Fuera
+                else bg_to_draw = tex_pirate_cove[3];                      // Cortina vacía (estados 3, 4 y 5)
+            }
             else {
-                // 2. CAPA DE FREDDY (Se dibuja primero, por si los demás están en la sala y lo tapan)
+                // 3. CAPA DE FREDDY
                 if (freddy_room == current_cam && tex_rooms_freddy[current_cam] != NULL) {
                     bg_to_draw = tex_rooms_freddy[current_cam];
                 }
 
-                // 3. CAPA DE BONNIE (Sobrescribe la cámara, incluyendo a Freddy)
+                // 4. CAPA DE BONNIE
                 if (bonnie_room == current_cam && tex_rooms_bonnie[current_cam] != NULL) {
                     int bonnie_pose = animatronics_get_bonnie_pose();
                     if (current_cam == CAM_1B) {
@@ -416,7 +470,7 @@ void camera_system_draw_room(void) {
                         bg_to_draw = tex_rooms_bonnie[current_cam];
                     }
                 }
-                // 4. CAPA DE CHICA (Sobrescribe la cámara, incluyendo a Freddy)
+                // 5. CAPA DE CHICA
                 else if (chica_room == current_cam && tex_rooms_chica[current_cam] != NULL) {
                     int chica_pose = animatronics_get_chica_pose();
                     if (current_cam == CAM_1B) {
@@ -438,7 +492,7 @@ void camera_system_draw_room(void) {
                     }
                 }
 
-                // 5. LÓGICA ESPECIAL DEL PASILLO OESTE (CAM_2A)
+                // 6. LÓGICA ESPECIAL DEL PASILLO OESTE (CAM_2A)
                 if (current_cam == CAM_2A) {
                     if (rand() % 100 < 70) {
                         bg_to_draw = tex_west_hall_dark; 
@@ -455,21 +509,27 @@ void camera_system_draw_room(void) {
             if (bg_to_draw) {
                 // --- EL APAGÓN VISUAL ---
                 if (cam_blackout_timer > 0) {
-                    // Magia de Scott: en lugar de dibujar la habitación, rellena la pantalla de negro
                     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
                     SDL_Rect black_screen = {0, 0, 1280, 720};
                     SDL_RenderFillRect(renderer, &black_screen);
                 } else {
-                    // Si no hay apagón, dibuja la foto de la cámara normal
                     SDL_Rect src_rect = {(int)cam_pan_x, 0, 1280, 720};
                     SDL_RenderCopy(renderer, bg_to_draw, &src_rect, NULL);
+
+                    // --- DIBUJAR FOXY CORRIENDO SOBRE LA 2A ---
+                    if (current_cam == CAM_2A && foxy_state == 4) {
+                        int f_idx = (int)foxy_run_frame;
+                        if (f_idx >= FOXY_RUN_FRAMES) f_idx = FOXY_RUN_FRAMES - 1;
+                        if (tex_foxy_run[f_idx]) {
+                            SDL_RenderCopy(renderer, tex_foxy_run[f_idx], &src_rect, NULL);
+                        }
+                    }
                 }
             }
         }
 
         int s_idx = (int)static_frame;
         if (tex_static[s_idx]) {
-            // La estática se dibuja siempre encima con su opacidad original
             SDL_SetTextureAlphaMod(tex_static[s_idx], 55); 
             SDL_RenderCopy(renderer, tex_static[s_idx], NULL, NULL);
         }
@@ -507,7 +567,7 @@ void camera_system_draw_ui(void) {
             if (tex_cam_txt[i]) SDL_RenderCopy(renderer, tex_cam_txt[i], NULL, &txt_rects[i]);
         }
 
-        // Localizador Bonnie
+        // Localizadores
         int bonnie_room = animatronics_get_bonnie_room();
         if (bonnie_room >= 0 && bonnie_room < 11) {
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
@@ -515,8 +575,6 @@ void camera_system_draw_ui(void) {
             SDL_RenderFillRect(renderer, &btn_rects[bonnie_room]);
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
         }
-
-        // Localizador Chica
         int chica_room = animatronics_get_chica_room();
         if (chica_room >= 0 && chica_room < 11) {
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
@@ -524,13 +582,25 @@ void camera_system_draw_ui(void) {
             SDL_RenderFillRect(renderer, &btn_rects[chica_room]);
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
         }
-
-        // Localizador Freddy
         int freddy_room = animatronics_get_freddy_room();
         if (freddy_room >= 0 && freddy_room < 11) {
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
             SDL_SetRenderDrawColor(renderer, 139, 69, 19, 150); 
             SDL_RenderFillRect(renderer, &btn_rects[freddy_room]);
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+        }
+
+        // Localizador Foxy (Solo en 1C o 2A)
+        int foxy_state = animatronics_get_foxy_state();
+        if (foxy_state < 3) {
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 150); 
+            SDL_RenderFillRect(renderer, &btn_rects[CAM_1C]);
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+        } else if (foxy_state == 4) {
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 150); 
+            SDL_RenderFillRect(renderer, &btn_rects[CAM_2A]);
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
         }
 
@@ -578,6 +648,14 @@ void camera_system_cleanup(void) {
         if (tex_rooms_freddy[i]) SDL_DestroyTexture(tex_rooms_freddy[i]);
     }
 
+    // Limpiar Foxy
+    for (int i = 0; i < 4; i++) {
+        if (tex_pirate_cove[i]) SDL_DestroyTexture(tex_pirate_cove[i]);
+    }
+    for (int i = 0; i < FOXY_RUN_FRAMES; i++) {
+        if (tex_foxy_run[i]) SDL_DestroyTexture(tex_foxy_run[i]);
+    }
+
     if (tex_map[0]) SDL_DestroyTexture(tex_map[0]);
     if (tex_map[1]) SDL_DestroyTexture(tex_map[1]);
     if (tex_cam_border) SDL_DestroyTexture(tex_cam_border);
@@ -607,6 +685,7 @@ void camera_system_cleanup(void) {
         audio_free_sfx(sfx_cam_static);
     }
     if (sfx_cam_blip) audio_free_sfx(sfx_cam_blip);
+    if (sfx_foxy_run) audio_free_sfx(sfx_foxy_run);
 
     for (int i = 0; i < 3; i++) {
         if (sfx_garble[i]) {
@@ -624,6 +703,16 @@ void camera_system_toggle(void) {
             is_blipping = true; blip_anim_frame = 0.0f;
             audio_set_channel_volume(channel_cam_static, 100);
             is_backstage_bonnie_close = (rand() % 100 < 10);
+            
+            // --- FOXY: Si lo pilla la cámara nada más abrirla ---
+            if (current_cam == CAM_2A && animatronics_get_foxy_state() == 3) {
+                animatronics_trigger_foxy_run();
+                foxy_run_frame = 0.0f;
+                if (sfx_foxy_run) {
+                    audio_set_sfx_volume(sfx_foxy_run, 100);
+                    audio_play_sfx_chunk(sfx_foxy_run);
+                }
+            }
         } else {
             audio_play_sfx_chunk(sfx_cam_down);
             audio_set_channel_volume(channel_cam_static, 0);

@@ -61,11 +61,14 @@ static Mix_Chunk* sfx_breath[4]   = {NULL};
 static Mix_Chunk* sfx_hallucination[4] = {NULL};
 static Mix_Chunk* sfx_kitchen[4]  = {NULL};
 static Mix_Chunk* sfx_freddy_laugh[3] = {NULL};
+static Mix_Chunk* sfx_knock = NULL;
+static Mix_Chunk* sfx_pirate_song = NULL;
 
 static int channel_light_L = -1, channel_light_R = -1;
 static int channel_fan = -1, channel_breath = -1;
 static int channel_circus = -1, channel_kitchen = -1;
-static int channel_music_box = -1; 
+static int channel_music_box = -1;
+static int channel_pirate_song = -1;
 
 static int breath_timer = 0, kitchen_timer = 0;
 static bool bonnie_scare_played = false, chica_scare_played = false;
@@ -74,14 +77,17 @@ static bool bonnie_scare_played = false, chica_scare_played = false;
 #define JUMPSCARE_BONNIE_FRAMES  11
 #define JUMPSCARE_CHICA_FRAMES   16
 #define JUMPSCARE_FREDDY_FRAMES  31
+#define JUMPSCARE_FOXY_FRAMES    25
 static const float JUMPSCARE_ANIM_SPEED = 0.75f;
+static const float JUMPSCARE_FOXY_SPEED = 0.55f;
 
 static SDL_Texture* tex_bonnie_jumpscare[JUMPSCARE_BONNIE_FRAMES] = {NULL};
 static SDL_Texture* tex_chica_jumpscare[JUMPSCARE_CHICA_FRAMES]   = {NULL};
 static SDL_Texture* tex_freddy_jumpscare[JUMPSCARE_FREDDY_FRAMES] = {NULL};
+static SDL_Texture* tex_foxy_jumpscare[JUMPSCARE_FOXY_FRAMES] = {NULL};
 
-static bool  is_bonnie_jumpscare = false, is_chica_jumpscare = false, is_freddy_jumpscare = false;
-static float bonnie_jumpscare_frame = 0.0f, chica_jumpscare_frame = 0.0f, freddy_jumpscare_frame = 0.0f;
+static bool  is_bonnie_jumpscare = false, is_chica_jumpscare = false, is_freddy_jumpscare = false, is_foxy_jumpscare = false;
+static float bonnie_jumpscare_frame = 0.0f, chica_jumpscare_frame = 0.0f, freddy_jumpscare_frame = 0.0f, foxy_jumpscare_frame = 0.0f;
 static int   jumpscare_duration_timer = 0;
 static int   bonnie_force_down_timer = 0, chica_force_down_timer = 0;
 
@@ -103,7 +109,6 @@ static void free_sfx_array(Mix_Chunk** arr, int n) {
     }
 }
 
-// --- CAMBIO APLICADO: APAGADO QUIRÚRGICO DE CANALES ---
 static void trigger_jumpscare(bool* flag, bool play_scream_now) {
     *flag = true;
     
@@ -114,6 +119,8 @@ static void trigger_jumpscare(bool* flag, bool play_scream_now) {
     if (channel_music_box != -1) audio_stop_channel(channel_music_box);
     if (channel_breath != -1)    audio_stop_channel(channel_breath);
     if (channel_circus != -1)    audio_stop_channel(channel_circus);
+    if (channel_circus != -1)    audio_stop_channel(channel_circus);
+    if (channel_pirate_song != -1) audio_stop_channel(channel_pirate_song); 
     
     audio_stop_music();
 
@@ -195,6 +202,18 @@ void game_init(void) {
         IMG_FREDDY_JUMPSCARE_31
     }, JUMPSCARE_FREDDY_FRAMES);
 
+    load_textures(tex_foxy_jumpscare, (const char*[]){
+        IMG_FOXY_JUMPSCARE_1,  IMG_FOXY_JUMPSCARE_2,  IMG_FOXY_JUMPSCARE_3,
+        IMG_FOXY_JUMPSCARE_4,  IMG_FOXY_JUMPSCARE_5,  IMG_FOXY_JUMPSCARE_6,
+        IMG_FOXY_JUMPSCARE_7,  IMG_FOXY_JUMPSCARE_8,  IMG_FOXY_JUMPSCARE_9,
+        IMG_FOXY_JUMPSCARE_10, IMG_FOXY_JUMPSCARE_11, IMG_FOXY_JUMPSCARE_12,
+        IMG_FOXY_JUMPSCARE_13, IMG_FOXY_JUMPSCARE_14, IMG_FOXY_JUMPSCARE_15,
+        IMG_FOXY_JUMPSCARE_16, IMG_FOXY_JUMPSCARE_17, IMG_FOXY_JUMPSCARE_18,
+        IMG_FOXY_JUMPSCARE_19, IMG_FOXY_JUMPSCARE_20, IMG_FOXY_JUMPSCARE_21,
+        IMG_FOXY_JUMPSCARE_22, IMG_FOXY_JUMPSCARE_23, IMG_FOXY_JUMPSCARE_24,
+        IMG_FOXY_JUMPSCARE_25
+    }, JUMPSCARE_FOXY_FRAMES);
+
     sfx_fan          = audio_load_sfx("romfs:/sfx/Buzz_Fan_Florescent2.wav");
     sfx_light        = audio_load_sfx("romfs:/sfx/BallastHumMedium2.wav");
     sfx_door         = audio_load_sfx("romfs:/sfx/SFXBible_12478.wav");
@@ -205,7 +224,9 @@ void game_init(void) {
     sfx_steps        = audio_load_sfx("romfs:/sfx/deep_steps.wav");
     sfx_jumpscare    = audio_load_sfx("romfs:/sfx/XSCREAM.wav");
     sfx_running_fast = audio_load_sfx("romfs:/sfx/running fast3.wav");
-    sfx_music_box    = audio_load_sfx("romfs:/sfx/music box.wav"); 
+    sfx_music_box    = audio_load_sfx("romfs:/sfx/music_box.wav"); 
+    sfx_knock        = audio_load_sfx("romfs:/sfx/knock2.wav");
+    sfx_pirate_song  = audio_load_sfx("romfs:/sfx/pirate_song2.wav");
 
     const char* breath_paths[4]  = {"romfs:/sfx/Vocals_Breaths_S_35972006.wav","romfs:/sfx/Vocals_Breaths_S_35972008.wav","romfs:/sfx/Vocals_Breaths_S_35972012.wav","romfs:/sfx/Vocals_Breaths_S_35972014.wav"};
     const char* halluc_paths[4]  = {"romfs:/sfx/COMPUTER_DIGITAL_L2076505.wav","romfs:/sfx/garble1.wav","romfs:/sfx/garble2.wav","romfs:/sfx/garble3.wav"};
@@ -225,8 +246,8 @@ void game_init(void) {
     bonnie_scare_played = chica_scare_played = false;
     breath_timer = kitchen_timer = 0;
     channel_breath = channel_circus = channel_kitchen = channel_music_box = -1;
-    is_bonnie_jumpscare = is_chica_jumpscare = is_freddy_jumpscare = false;
-    bonnie_jumpscare_frame = chica_jumpscare_frame = freddy_jumpscare_frame = 0.0f;
+    is_bonnie_jumpscare = is_chica_jumpscare = is_freddy_jumpscare = is_foxy_jumpscare = false;
+    bonnie_jumpscare_frame = chica_jumpscare_frame = freddy_jumpscare_frame = foxy_jumpscare_frame = 0.0f;
     bonnie_force_down_timer = chica_force_down_timer = jumpscare_duration_timer = 0;
     hallucination_timer = hallucination_hold_timer = 0;
     current_hallucination = -1;
@@ -334,9 +355,48 @@ static void update_animatronic_sounds(void) {
     if (animatronics_get_freddy_moved_timer() == 10) {
         int r = rand() % 3;
         play_sfx_vol(sfx_freddy_laugh[r], 100);
-        play_sfx_vol(sfx_running_fast, 70);
+        // --- CAMBIO: Freddy usa pasos pesados, no pasos corriendo ---
+        play_sfx_vol(sfx_steps, 60); 
     }
 
+    // --- LÓGICA DE AUDIO DE FOXY ---
+    static int last_foxy_state = 0;
+    int current_foxy_state = animatronics_get_foxy_state();
+    
+    // 1. Sonido de correr al pasar al estado 4 (El pasillo)
+    if (last_foxy_state != 4 && current_foxy_state == 4) {
+        play_sfx_vol(sfx_running_fast, 100);
+    }
+    last_foxy_state = current_foxy_state;
+
+    // 2. Canción pirata (Dum dum dum)
+    if (current_foxy_state < 3) { // Solo canta si está en la Pirate Cove
+        if (rand() % 1000 == 0) { // Probabilidad muy baja por tick
+            if (channel_pirate_song == -1 || !Mix_Playing(channel_pirate_song)) {
+                if (sfx_pirate_song) {
+                    channel_pirate_song = audio_play_sfx_chunk(sfx_pirate_song);
+                }
+            }
+        }
+    } else {
+        // Si Foxy ya salió, deja de cantar inmediatamente
+        if (channel_pirate_song != -1 && Mix_Playing(channel_pirate_song)) {
+            audio_stop_channel(channel_pirate_song);
+            channel_pirate_song = -1;
+        }
+    }
+
+    // 3. Ajuste dinámico del volumen de la canción
+    if (channel_pirate_song != -1 && Mix_Playing(channel_pirate_song)) {
+        int vol = 15; // Sonido muy lejano y ahogado por defecto
+        if (camera_system_is_open()) {
+            if (camera_system_get_current_cam() == CAM_1C) vol = 100; // Al máximo si le miras directamente
+            else vol = 40; // Se escucha un poco mejor por los micros de las otras cámaras
+        }
+        audio_set_channel_volume(channel_pirate_song, vol);
+    }
+
+    // Alucinaciones Noche 4+
     if (current_night >= 4) {
         int b_room = animatronics_get_bonnie_room();
         int c_room = animatronics_get_chica_room();
@@ -388,11 +448,11 @@ static void update_breath_and_death(void) {
     bool kill_bonnie = (bonnie_force_down_timer >= 1800);
     bool kill_chica  = (chica_force_down_timer  >= 1800);
 
-    if (kill_bonnie && !is_bonnie_jumpscare && !is_chica_jumpscare && !is_freddy_jumpscare) {
+    if (kill_bonnie && !is_bonnie_jumpscare && !is_chica_jumpscare && !is_freddy_jumpscare && !is_foxy_jumpscare) {
         if (camera_system_is_open()) camera_system_toggle();
         trigger_jumpscare(&is_bonnie_jumpscare, true); 
     }
-    else if (kill_chica && !is_chica_jumpscare && !is_bonnie_jumpscare && !is_freddy_jumpscare) {
+    else if (kill_chica && !is_chica_jumpscare && !is_bonnie_jumpscare && !is_freddy_jumpscare && !is_foxy_jumpscare) {
         if (camera_system_is_open()) camera_system_toggle();
         trigger_jumpscare(&is_chica_jumpscare, true); 
     }
@@ -418,9 +478,16 @@ static void toggle_light(bool* this_light, bool* other_light, int* this_ch, int*
 // ── Update ────────────────────────────────────────────────────────────────────
 
 void game_update(void) {
-    if (is_bonnie_jumpscare || is_chica_jumpscare || is_freddy_jumpscare) {
+    if (is_bonnie_jumpscare || is_chica_jumpscare || is_freddy_jumpscare || is_foxy_jumpscare) {
         
         camera_system_update(); 
+
+        // --- CORRECCIÓN DEFINITIVA: PÉRDIDA TOTAL DE CONTROL ---
+        // Bonnie y Chica te giran la cabeza al centro.
+        // Freddy y Foxy te atacan en el ángulo en el que estés, pero la cámara queda congelada.
+        if (is_bonnie_jumpscare || is_chica_jumpscare) {
+            camera_x = 160.0f;
+        }
 
         if (is_bonnie_jumpscare) {
             bonnie_jumpscare_frame += JUMPSCARE_ANIM_SPEED;
@@ -428,13 +495,16 @@ void game_update(void) {
         } else if (is_chica_jumpscare) {
             chica_jumpscare_frame += JUMPSCARE_ANIM_SPEED;
             if (chica_jumpscare_frame >= JUMPSCARE_CHICA_FRAMES) chica_jumpscare_frame = 0.0f;
+        } else if (is_foxy_jumpscare) {
+            // --- FOXY: Usa su propia velocidad y no loopea (se queda en el último frame) ---
+            if (foxy_jumpscare_frame < JUMPSCARE_FOXY_FRAMES - 1) {
+                foxy_jumpscare_frame += JUMPSCARE_FOXY_SPEED;
+            }
         } else if (is_freddy_jumpscare) {
             float prev_frame = freddy_jumpscare_frame;
             if (freddy_jumpscare_frame < JUMPSCARE_FREDDY_FRAMES - 1) {
                 freddy_jumpscare_frame += 0.5f;
             }
-            
-            // --- CAMBIO APLICADO: GRITO DE FREDDY EN EL FRAME 7 RESTAURADO ---
             if (prev_frame < 7.0f && freddy_jumpscare_frame >= 7.0f) {
                 if (sfx_jumpscare) {
                     audio_set_sfx_volume(sfx_jumpscare, 100);
@@ -457,6 +527,7 @@ void game_update(void) {
         audio_stop_channel(channel_light_L); audio_stop_channel(channel_light_R);
         audio_stop_channel(channel_fan);     audio_stop_channel(channel_kitchen);
         audio_stop_channel(channel_music_box); 
+        audio_stop_channel(channel_pirate_song);
         channel_light_L = channel_light_R = channel_fan = channel_kitchen = channel_music_box = -1;
         left_light_on = right_light_on = false;
         if (left_door_on)  { left_door_on  = false; audio_play_sfx_chunk(sfx_door); }
@@ -489,6 +560,23 @@ void game_update(void) {
     if (!is_power_out) {
         animatronics_update(left_door_on, right_door_on, camera_system_is_open());
         update_animatronic_sounds();
+
+        // --- RESOLUCIÓN DEL ATAQUE DE FOXY ---
+        if (animatronics_get_foxy_state() == 5 && !is_foxy_jumpscare) {
+            // Foxy te ataca incluso con la cámara subida. Te arranca el monitor de las manos.
+            if (camera_system_is_open()) {
+                camera_system_toggle(); 
+            }
+            trigger_jumpscare(&is_foxy_jumpscare, true);
+        }
+        else if (animatronics_get_foxy_just_banged()) {
+            if (sfx_knock) {
+                audio_set_sfx_volume(sfx_knock, 100);
+                audio_play_sfx_chunk(sfx_knock);
+            }
+            int bang_penalty = 10 + (animatronics_get_foxy_bang_count() * 5);
+            power_system_subtract_power(bang_penalty); 
+        }
 
         if (animatronics_get_bonnie_room() != ROOM_DOOR_LEFT)  bonnie_scare_played = false;
         if (animatronics_get_chica_room()  != ROOM_DOOR_RIGHT) chica_scare_played  = false;
@@ -552,12 +640,12 @@ void game_update(void) {
                 audio_set_sfx_volume(sfx_fan, 10);
             } else {
                 audio_set_sfx_volume(sfx_fan, 25);
-                if      (animatronics_get_bonnie_room() == ROOM_OFFICE && !is_chica_jumpscare && !is_freddy_jumpscare)
+                // --- Foxy ya no está en este bloque porque ataca de forma autónoma arriba ---
+                if      (animatronics_get_bonnie_room() == ROOM_OFFICE && !is_chica_jumpscare && !is_freddy_jumpscare && !is_foxy_jumpscare)
                     trigger_jumpscare(&is_bonnie_jumpscare, true);
-                else if (animatronics_get_chica_room()  == ROOM_OFFICE && !is_bonnie_jumpscare && !is_freddy_jumpscare)
+                else if (animatronics_get_chica_room()  == ROOM_OFFICE && !is_bonnie_jumpscare && !is_freddy_jumpscare && !is_foxy_jumpscare)
                     trigger_jumpscare(&is_chica_jumpscare, true);
-                else if (animatronics_get_freddy_room() == ROOM_OFFICE && !is_bonnie_jumpscare && !is_chica_jumpscare)
-                    // --- CAMBIO APLICADO: FREDDY VUELVE A FALSE PARA ESPERAR AL FRAME 7 ---
+                else if (animatronics_get_freddy_room() == ROOM_OFFICE && !is_bonnie_jumpscare && !is_chica_jumpscare && !is_foxy_jumpscare)
                     trigger_jumpscare(&is_freddy_jumpscare, false); 
             }
         }
@@ -579,7 +667,9 @@ static void draw_jumpscare(SDL_Texture** frames, int total, float anim_frame) {
     int f = (int)anim_frame;
     if (f >= total) f = total - 1;
     if (!frames[f]) return;
-    SDL_Rect src = {160, 0, 1280, 720}, dst = {0, 0, 1280, 720};
+    
+    SDL_Rect src = {(int)camera_x, 0, 1280, 720}; 
+    SDL_Rect dst = {0, 0, 1280, 720};
     SDL_RenderCopy(graphics_get_renderer(), frames[f], &src, &dst);
 }
 
@@ -629,7 +719,32 @@ void game_draw(void) {
 
     if (!is_power_out) {
         bool cam_full = (camera_system_is_open() && camera_system_get_frame() >= (CAM_FRAMES - 1));
+        
+        // --- EL VENTILADOR SE DIBUJA DETRÁS ---
         if (!cam_full) {
+            if (tex_fan[fan_frame]) {
+                int w, h;
+                SDL_QueryTexture(tex_fan[fan_frame], NULL, NULL, &w, &h);
+                SDL_Rect dst = {780 - (int)camera_x, 303, w, h};
+                SDL_RenderCopy(renderer, tex_fan[fan_frame], NULL, &dst);
+            }
+        }
+    }
+
+    power_system_draw_jumpscare();
+    
+    // --- LOS MONSTRUOS SE DIBUJAN AQUÍ ---
+    if      (is_bonnie_jumpscare) draw_jumpscare(tex_bonnie_jumpscare, JUMPSCARE_BONNIE_FRAMES, bonnie_jumpscare_frame);
+    else if (is_chica_jumpscare)  draw_jumpscare(tex_chica_jumpscare,  JUMPSCARE_CHICA_FRAMES,  chica_jumpscare_frame);
+    else if (is_freddy_jumpscare) draw_jumpscare(tex_freddy_jumpscare, JUMPSCARE_FREDDY_FRAMES, freddy_jumpscare_frame);
+    else if (is_foxy_jumpscare)   draw_jumpscare(tex_foxy_jumpscare,   JUMPSCARE_FOXY_FRAMES,   foxy_jumpscare_frame);
+
+    // --- LOS BOTONES DE LA HABITACIÓN SE DIBUJAN AQUÍ ---
+    if (!is_power_out) {
+        bool cam_full = (camera_system_is_open() && camera_system_get_frame() >= (CAM_FRAMES - 1));
+        
+        // Los botones de las puertas desaparecen si Freddy te ataca
+        if (!cam_full && !is_freddy_jumpscare) {
             int sL = (left_door_on ? 1 : 0) | (left_light_on  ? 2 : 0);
             int sR = (right_door_on? 1 : 0) | (right_light_on ? 2 : 0);
             if (tex_button_L[sL]) {
@@ -640,25 +755,24 @@ void game_draw(void) {
                 SDL_Rect dst = {1497 - (int)camera_x, 273, 92, 247};
                 SDL_RenderCopy(renderer, tex_button_R[sR], NULL, &dst);
             }
-            if (tex_fan[fan_frame]) {
-                int w, h;
-                SDL_QueryTexture(tex_fan[fan_frame], NULL, NULL, &w, &h);
-                SDL_Rect dst = {780 - (int)camera_x, 303, w, h};
-                SDL_RenderCopy(renderer, tex_fan[fan_frame], NULL, &dst);
-            }
         }
-        hud_draw(camera_system_is_open(), camera_system_get_frame());
-        power_system_draw_hud(camera_system_is_open(), camera_system_get_frame());
-        camera_system_draw_button();
+        
+        // El botón de cámara desaparece solo con Bonnie y Chica
+        bool is_bonnie_or_chica = (is_bonnie_jumpscare || is_chica_jumpscare);
+        if (!is_bonnie_or_chica) {
+            camera_system_draw_button();
+        }
     }
 
-    power_system_draw_jumpscare();
-    
-    if      (is_bonnie_jumpscare) draw_jumpscare(tex_bonnie_jumpscare, JUMPSCARE_BONNIE_FRAMES, bonnie_jumpscare_frame);
-    else if (is_chica_jumpscare)  draw_jumpscare(tex_chica_jumpscare,  JUMPSCARE_CHICA_FRAMES,  chica_jumpscare_frame);
-    else if (is_freddy_jumpscare) draw_jumpscare(tex_freddy_jumpscare, JUMPSCARE_FREDDY_FRAMES, freddy_jumpscare_frame);
-
+    // --- CAMBIO: LA ANIMACIÓN DE LA TABLETA SE DIBUJA AHORA ---
+    // (Al dibujarla aquí, tapará físicamente a los botones mientras sube/baja)
     camera_system_draw_animation();
+
+    // --- EL HUD SE DIBUJA AL FINAL (Siempre por encima de la tableta) ---
+    if (!is_power_out) {
+        hud_draw(camera_system_is_open(), camera_system_get_frame());
+        power_system_draw_hud(camera_system_is_open(), camera_system_get_frame());
+    }
 
     if (hallucination_timer > 0 && !is_power_out && current_hallucination >= 0 && tex_hallucinations[current_hallucination]) {
         SDL_Rect dst = {0, 0, 1280, 720};
@@ -699,13 +813,15 @@ void game_cleanup(void) {
     destroy_textures(tex_bonnie_jumpscare, JUMPSCARE_BONNIE_FRAMES);
     destroy_textures(tex_chica_jumpscare,  JUMPSCARE_CHICA_FRAMES);
     destroy_textures(tex_freddy_jumpscare, JUMPSCARE_FREDDY_FRAMES);
+    destroy_textures(tex_foxy_jumpscare,   JUMPSCARE_FOXY_FRAMES);
 
     audio_stop_music();
     audio_stop_all_sfx();
 
     Mix_Chunk* single_sfx[] = {sfx_fan, sfx_light, sfx_door, sfx_circus, sfx_pounding,
-                                sfx_window_scare, sfx_error, sfx_steps, sfx_jumpscare, sfx_running_fast};
-    for (int i = 0; i < 10; i++)
+                                sfx_window_scare, sfx_error, sfx_steps, sfx_jumpscare, 
+                                sfx_running_fast, sfx_knock, sfx_pirate_song}; 
+    for (int i = 0; i < 12; i++) 
         if (single_sfx[i]) audio_free_sfx(single_sfx[i]);
 
     if (sfx_music_box) audio_free_sfx(sfx_music_box); 

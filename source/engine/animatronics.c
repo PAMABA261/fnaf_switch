@@ -17,18 +17,27 @@ typedef struct {
 static Animatronic bonnie;
 static Animatronic chica;
 static Animatronic freddy;
+
+// --- Variables de Foxy ---
+static int foxy_ai_level = 0;
+static int foxy_state = 0;        // 0 a 5 (Pirate Cove -> Pasillo -> Puerta -> Jumpscare)
+static int foxy_move_timer = 0;
+static int foxy_action_timer = 0;
+static int foxy_bang_count = 0;
+static bool foxy_just_banged = false;
+
 static Mix_Chunk* sfx_deep_steps = NULL;
 
-// Niveles de IA por noche: {bonnie, chica, freddy}
-static const int AI_LEVELS[8][3] = {
-    {0,  0,  0},  // noche 0 (no usada)
-    {0,  0,  0},  // noche 1
-    {3,  1,  0},  // noche 2
-    {0,  5,  1},  // noche 3
-    {2,  4,  2},  // noche 4
-    {5,  7,  3},  // noche 5
-    {10, 12, 4},  // noche 6
-    {20, 20, 20}, // noche 7
+// Niveles de IA por noche: {bonnie, chica, freddy, foxy}
+static const int AI_LEVELS[8][4] = {
+    {0,  0,  0,  0},  // noche 0 (no usada)
+    {0,  0,  0,  0},  // noche 1
+    {3,  1,  0,  1},  // noche 2
+    {0,  5,  1,  2},  // noche 3
+    {2,  4,  2,  6},  // noche 4
+    {5,  7,  3,  5},  // noche 5
+    {10, 12, 4,  6},  // noche 6
+    {20, 20, 20, 20}, // noche 7
 };
 
 static void play_footsteps(int volume) {
@@ -135,14 +144,71 @@ static void update_freddy(bool right_door_closed, bool camera_is_open) {
     on_moved(&freddy, prev);
 }
 
+static void update_foxy(bool left_door_closed, bool camera_is_open) {
+    foxy_just_banged = false; // Se resetea cada tick
+
+    if (foxy_state < 3) {
+        foxy_move_timer++;
+        // 300 frames = 5 segundos
+        if (foxy_move_timer >= 300) {
+            foxy_move_timer = 0;
+            
+            // Foxy solo tira los dados si NO estás mirando la CAM 1C
+            bool looking_at_cove = (camera_is_open && camera_system_get_current_cam() == CAM_1C);
+            
+            if (!looking_at_cove) {
+                if ((rand() % 20) + 1 <= foxy_ai_level) {
+                    foxy_state++;
+                }
+            }
+        }
+    } 
+    else if (foxy_state == 3) {
+        // Foxy ya no está en la cortina. Cuenta atrás oculta.
+        foxy_action_timer++;
+        
+        // Si pasan 1500 frames (25 segundos) sin mirar el pasillo 2A, ataca
+        if (foxy_action_timer >= 1500) {
+            foxy_state = 5; 
+            foxy_action_timer = 0;
+        }
+    }
+    else if (foxy_state == 4) {
+        // Foxy llegó a la puerta tras la animación de correr
+        foxy_action_timer++;
+        
+        // Espera 100 frames (~1.6 segundos) en la puerta izquierda
+        if (foxy_action_timer >= 100) {
+            if (left_door_closed) {
+                // Bloqueado: Golpea la puerta
+                foxy_state = rand() % 2; // Vuelve al estado 0 o 1
+                foxy_just_banged = true; // Flag para reproducir sonido y restar luz en game.c
+                foxy_bang_count++;
+            } else {
+                // Puerta abierta: Jumpscare
+                foxy_state = 5;
+            }
+            foxy_action_timer = 0;
+        }
+    }
+}
+
 // ── PUBLIC API ────────────────────────────────────────────────────────────────
 
 void animatronics_init(int night_number) {
     sfx_deep_steps = audio_load_sfx("romfs:/sfx/deep_steps.wav");
     int n = (night_number >= 1 && night_number <= 7) ? night_number : 0;
+    
     init_animatronic(&bonnie,  AI_LEVELS[n][0]);
     init_animatronic(&chica,   AI_LEVELS[n][1]);
     init_animatronic(&freddy,  AI_LEVELS[n][2]);
+    
+    foxy_ai_level = AI_LEVELS[n][3];
+    foxy_state = 0;
+    foxy_move_timer = 0;
+    foxy_action_timer = 0;
+    foxy_bang_count = 0;
+    foxy_just_banged = false;
 }
 
 void animatronics_update(bool left_door_closed, bool right_door_closed, bool camera_is_open) {
@@ -153,6 +219,7 @@ void animatronics_update(bool left_door_closed, bool right_door_closed, bool cam
     update_bonnie(left_door_closed);
     update_chica(right_door_closed);
     update_freddy(right_door_closed, camera_is_open);
+    update_foxy(left_door_closed, camera_is_open);
 }
 
 void animatronics_on_hour_changed(int new_hour) {
@@ -161,6 +228,7 @@ void animatronics_on_hour_changed(int new_hour) {
         bonnie.ai_level++;
         chica.ai_level++;
         freddy.ai_level++;
+        foxy_ai_level++; 
     }
 }
 
@@ -181,3 +249,15 @@ int animatronics_get_chica_prev_room(void)     { return chica.prev_room; }
 int animatronics_get_freddy_room(void)         { return freddy.current_room; }
 int animatronics_get_freddy_prev_room(void)    { return freddy.prev_room; }
 int animatronics_get_freddy_moved_timer(void)  { return freddy.just_moved_timer; }
+
+int animatronics_get_foxy_state(void)          { return foxy_state; }
+bool animatronics_get_foxy_just_banged(void)   { return foxy_just_banged; }
+int animatronics_get_foxy_bang_count(void)     { return foxy_bang_count; }
+
+void animatronics_trigger_foxy_run(void) {
+    // Si la cámara 2A lo pilla escapado (estado 3), se lanza a correr hacia la puerta (estado 4)
+    if (foxy_state == 3) {
+        foxy_state = 4;
+        foxy_action_timer = 0; // Reseteamos para que tarde exactamente 100 frames en golpear
+    }
+}

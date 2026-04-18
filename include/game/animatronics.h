@@ -28,4 +28,9 @@ int animatronics_get_chica_prev_room(void);
 int animatronics_get_freddy_room(void);
 int animatronics_get_freddy_prev_room(void);
 int animatronics_get_freddy_moved_timer(void);
+
+int animatronics_get_foxy_state(void);
+bool animatronics_get_foxy_just_banged(void);
+int animatronics_get_foxy_bang_count(void);
+void animatronics_trigger_foxy_run(void);
 #endif

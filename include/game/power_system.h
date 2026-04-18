@@ -18,3 +18,4 @@ bool power_system_update(int items_on);
 void power_system_draw_hud(bool cam_open, float cam_frame);
 void power_system_draw_jumpscare(void);
 void power_system_cleanup(void);
+void power_system_subtract_power(int amount);
