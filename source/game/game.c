@@ -223,7 +223,7 @@ void game_init(void) {
     sfx_error        = audio_load_sfx("romfs:/sfx/error.wav");
     sfx_steps        = audio_load_sfx("romfs:/sfx/deep_steps.wav");
     sfx_jumpscare    = audio_load_sfx("romfs:/sfx/XSCREAM.wav");
-    sfx_running_fast = audio_load_sfx("romfs:/sfx/running fast3.wav");
+    sfx_running_fast = audio_load_sfx("romfs:/sfx/running_fast3.wav");
     sfx_music_box    = audio_load_sfx("romfs:/sfx/music_box.wav"); 
     sfx_knock        = audio_load_sfx("romfs:/sfx/knock2.wav");
     sfx_pirate_song  = audio_load_sfx("romfs:/sfx/pirate_song2.wav");
