@@ -140,6 +140,9 @@
 #define IMG_DOOR_R_CLOSE_14           GFX_PATH "117.png"
 #define IMG_DOOR_R_CLOSE_15           GFX_PATH "118.png" // Cerrada
 
+// Boton de las llamadas
+#define IMG_BUTTON_CALL               GFX_PATH "481.png"
+
 // Boton de las cámaras
 #define IMG_BUTTON_CAM                GFX_PATH "420.png" 
 
@@ -221,7 +224,6 @@
 #define IMG_EAST_HALL_CORNER_5        GFX_PATH "486.png" // Fredyy
 #define IMG_BACKSTAGE_1               GFX_PATH "83.png"
 #define IMG_BACKSTAGE_2               GFX_PATH "205.png" // Bonnie
-#define IMG_BACKSTAGE_3               GFX_PATH "555.png" // Bonie más cerca de la cámara
 #define IMG_RESTROOMS_1               GFX_PATH "41.png" 
 #define IMG_RESTROOMS_2               GFX_PATH "217.png" // Chica
 #define IMG_RESTROOMS_3               GFX_PATH "219.png" // Chica más cerca
@@ -419,3 +421,14 @@
 #define IMG_ITS_ME_1                  GFX_PATH "543.png"
 #define IMG_BONNIE_HALLUTINATION      GFX_PATH "520.png"
 #define IMG_ITS_ME_2                  GFX_PATH "544.png"
+#define IMG_BACKSTAGE_3               GFX_PATH "555.png" // Bonnie mirando a camara
+#define IMG_BACKSTAGE_4               GFX_PATH "354.png" // Cabezas mirando a camara
+#define IMG_SHOW_STAGE_6              GFX_PATH "355.png" // Freddy mirando a camara
+#define IMG_EAST_HALL_5               GFX_PATH "546.png" // Niños llorando
+#define IMG_EAST_HALL_6               GFX_PATH "554.png" // It's me
+#define IMG_EAST_HALL_CORNER_6        GFX_PATH "549.png" // Periodico 1
+#define IMG_EAST_HALL_CORNER_7        GFX_PATH "550.png" // Periodico 2
+#define IMG_EAST_HALL_CORNER_8        GFX_PATH "551.png" // Periodico 3
+#define IMG_EAST_HALL_CORNER_9        GFX_PATH "552.png" // Periodico 4
+#define IMG_PIRATE_COVE_5             GFX_PATH "553.png" // It's me
+#define IMG_WEST_HALL_CORNER_5        GFX_PATH "571.png" // Poster de Freddy deformado

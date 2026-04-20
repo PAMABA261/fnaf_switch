@@ -8,6 +8,7 @@
 #include "engine/input.h"
 #include "engine/audio.h"
 #include <stdlib.h>
+#include <string.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
 
@@ -34,6 +35,9 @@ static SDL_Texture* tex_door_L_close[DOOR_FRAMES] = {NULL};
 static SDL_Texture* tex_door_R_close[DOOR_FRAMES] = {NULL};
 static SDL_Texture* tex_button_L[4] = {NULL};
 static SDL_Texture* tex_button_R[4] = {NULL};
+
+// --- AÑADIDO: Botón de Llamada ---
+static SDL_Texture* tex_button_call = NULL;
 
 // ── Victoria ──────────────────────────────────────────────────────────────────
 static bool is_winning = false;
@@ -63,15 +67,28 @@ static Mix_Chunk* sfx_kitchen[4]  = {NULL};
 static Mix_Chunk* sfx_freddy_laugh[3] = {NULL};
 static Mix_Chunk* sfx_knock = NULL;
 static Mix_Chunk* sfx_pirate_song = NULL;
+static Mix_Chunk* sfx_nose_honk = NULL;
+static Mix_Chunk* sfx_whisper = NULL;
+static Mix_Chunk* sfx_phone_call = NULL; 
 
 static int channel_light_L = -1, channel_light_R = -1;
 static int channel_fan = -1, channel_breath = -1;
 static int channel_circus = -1, channel_kitchen = -1;
 static int channel_music_box = -1;
 static int channel_pirate_song = -1;
+static int channel_whisper = -1;
+static int channel_phone = -1; 
+static int channel_nose = -1;
+static int channel_garble = -1;
 
 static int breath_timer = 0, kitchen_timer = 0;
+static int freddy_attack_timer = 0;
 static bool bonnie_scare_played = false, chica_scare_played = false;
+static int phone_delay_timer = 0;
+
+// --- AÑADIDO: Variables de estado de la llamada ---
+static bool is_call_muted = false;
+static bool call_finished = false;
 
 // ── Jumpscares ────────────────────────────────────────────────────────────────
 #define JUMPSCARE_BONNIE_FRAMES  11
@@ -119,8 +136,9 @@ static void trigger_jumpscare(bool* flag, bool play_scream_now) {
     if (channel_music_box != -1) audio_stop_channel(channel_music_box);
     if (channel_breath != -1)    audio_stop_channel(channel_breath);
     if (channel_circus != -1)    audio_stop_channel(channel_circus);
-    if (channel_circus != -1)    audio_stop_channel(channel_circus);
     if (channel_pirate_song != -1) audio_stop_channel(channel_pirate_song); 
+    if (channel_whisper != -1)   audio_stop_channel(channel_whisper);
+    if (channel_phone != -1)     audio_stop_channel(channel_phone); // Callamos a Phone Guy si mueres
     
     audio_stop_music();
 
@@ -146,6 +164,7 @@ void game_init(void) {
     tex_office_blackout_freddy= graphics_load_texture(IMG_OFFICE_BLACK_OUT_FREDDY);
     tex_office_bonnie         = graphics_load_texture(IMG_OFFICE_BONNIE);
     tex_office_chica          = graphics_load_texture(IMG_OFFICE_CHICA);
+    tex_button_call           = graphics_load_texture(IMG_BUTTON_CALL); // <-- AÑADIDO
     load_textures(tex_fan, (const char*[]){IMG_FAN_1, IMG_FAN_2, IMG_FAN_3}, 3);
 
     load_textures(tex_button_L, (const char*[]){IMG_BUTTON_L_1, IMG_BUTTON_L_2, IMG_BUTTON_L_3, IMG_BUTTON_L_4}, 4);
@@ -227,6 +246,23 @@ void game_init(void) {
     sfx_music_box    = audio_load_sfx("romfs:/sfx/music_box.wav"); 
     sfx_knock        = audio_load_sfx("romfs:/sfx/knock2.wav");
     sfx_pirate_song  = audio_load_sfx("romfs:/sfx/pirate_song2.wav");
+    sfx_nose_honk    = audio_load_sfx("romfs:/sfx/PartyFavorraspyPart_AC01_3.wav"); 
+    sfx_whisper      = audio_load_sfx("romfs:/sfx/whispering2.wav"); 
+
+    // --- AÑADIDO: Carga dinámica de la llamada según la noche ---
+    char call_path[64] = "";
+    if (current_night == 1)      strcpy(call_path, "romfs:/sfx/voiceover1c.wav");
+    else if (current_night == 2) strcpy(call_path, "romfs:/sfx/voiceover2a.wav");
+    else if (current_night == 3) strcpy(call_path, "romfs:/sfx/voiceover3.wav");
+    else if (current_night == 4) strcpy(call_path, "romfs:/sfx/voiceover4.wav");
+    else if (current_night == 5) strcpy(call_path, "romfs:/sfx/voiceover5.wav");
+
+    if (call_path[0] != '\0') {
+        sfx_phone_call = audio_load_sfx(call_path);
+        phone_delay_timer = 120; 
+    } else {
+        call_finished = true; 
+    }
 
     const char* breath_paths[4]  = {"romfs:/sfx/Vocals_Breaths_S_35972006.wav","romfs:/sfx/Vocals_Breaths_S_35972008.wav","romfs:/sfx/Vocals_Breaths_S_35972012.wav","romfs:/sfx/Vocals_Breaths_S_35972014.wav"};
     const char* halluc_paths[4]  = {"romfs:/sfx/COMPUTER_DIGITAL_L2076505.wav","romfs:/sfx/garble1.wav","romfs:/sfx/garble2.wav","romfs:/sfx/garble3.wav"};
@@ -244,8 +280,13 @@ void game_init(void) {
     is_winning = false; win_fade = 0.0f;
     random_sound_timer = 0;
     bonnie_scare_played = chica_scare_played = false;
-    breath_timer = kitchen_timer = 0;
-    channel_breath = channel_circus = channel_kitchen = channel_music_box = -1;
+    breath_timer = kitchen_timer = freddy_attack_timer = 0;
+    
+    // --- AÑADIDO: Reset de estados de llamada ---
+    is_call_muted = false;
+    call_finished = (sfx_phone_call == NULL);
+    
+    channel_breath = channel_circus = channel_kitchen = channel_music_box = channel_whisper = -1;
     is_bonnie_jumpscare = is_chica_jumpscare = is_freddy_jumpscare = is_foxy_jumpscare = false;
     bonnie_jumpscare_frame = chica_jumpscare_frame = freddy_jumpscare_frame = foxy_jumpscare_frame = 0.0f;
     bonnie_force_down_timer = chica_force_down_timer = jumpscare_duration_timer = 0;
@@ -263,12 +304,14 @@ void game_init(void) {
 // ── Update helpers ────────────────────────────────────────────────────────────
 
 static void update_hallucination(void) {
-    if (random_sound_timer % 60 == 0 && (rand() % 1000) == 0) {
-        hallucination_timer = 100;
-        int s = rand() % 4;
-        if (sfx_hallucination[s]) {
-            audio_set_sfx_volume(sfx_hallucination[s], 100);
-            audio_play_sfx_chunk(sfx_hallucination[s]);
+    if (random_sound_timer % 60 == 0) { 
+        if ((rand() % 1000) == 0) { 
+            hallucination_timer = 100; 
+            int s = rand() % 4;
+            if (sfx_hallucination[s]) {
+                audio_set_sfx_volume(sfx_hallucination[s], 100); 
+                audio_play_sfx_chunk(sfx_hallucination[s]);
+            }
         }
     }
     if (hallucination_timer > 0) {
@@ -355,68 +398,68 @@ static void update_animatronic_sounds(void) {
     if (animatronics_get_freddy_moved_timer() == 10) {
         int r = rand() % 3;
         play_sfx_vol(sfx_freddy_laugh[r], 100);
-        // --- CAMBIO: Freddy usa pasos pesados, no pasos corriendo ---
         play_sfx_vol(sfx_steps, 60); 
     }
 
-    // --- LÓGICA DE AUDIO DE FOXY ---
     static int last_foxy_state = 0;
     int current_foxy_state = animatronics_get_foxy_state();
     
-    // 1. Sonido de correr al pasar al estado 4 (El pasillo)
     if (last_foxy_state != 4 && current_foxy_state == 4) {
         play_sfx_vol(sfx_running_fast, 100);
     }
     last_foxy_state = current_foxy_state;
 
-    // 2. Canción pirata (Dum dum dum)
-    if (current_foxy_state < 3) { // Solo canta si está en la Pirate Cove
-        if (rand() % 1000 == 0) { // Probabilidad muy baja por tick
-            if (channel_pirate_song == -1 || !Mix_Playing(channel_pirate_song)) {
-                if (sfx_pirate_song) {
-                    channel_pirate_song = audio_play_sfx_chunk(sfx_pirate_song);
+    if (current_foxy_state < 3) {
+        if (random_sound_timer % 240 == 0) {
+            if (animatronics_get_foxy_state() == 0 && (rand() % 30) == 0) { 
+                if (channel_pirate_song == -1 || !Mix_Playing(channel_pirate_song)) {
+                    channel_pirate_song = audio_play_sfx_chunk(sfx_pirate_song); 
                 }
             }
         }
     } else {
-        // Si Foxy ya salió, deja de cantar inmediatamente
         if (channel_pirate_song != -1 && Mix_Playing(channel_pirate_song)) {
-            audio_stop_channel(channel_pirate_song);
-            channel_pirate_song = -1;
+        int vol = 5; 
+        if (camera_system_is_open() && camera_system_get_current_cam() == CAM_1C) {
+            vol = 15; 
         }
+        audio_set_channel_volume(channel_pirate_song, vol);
+    }
     }
 
-    // 3. Ajuste dinámico del volumen de la canción
     if (channel_pirate_song != -1 && Mix_Playing(channel_pirate_song)) {
-        int vol = 15; // Sonido muy lejano y ahogado por defecto
+        int vol = 15;
         if (camera_system_is_open()) {
-            if (camera_system_get_current_cam() == CAM_1C) vol = 100; // Al máximo si le miras directamente
-            else vol = 40; // Se escucha un poco mejor por los micros de las otras cámaras
+            if (camera_system_get_current_cam() == CAM_1C) vol = 100;
+            else vol = 40;
         }
         audio_set_channel_volume(channel_pirate_song, vol);
     }
 
-    // Alucinaciones Noche 4+
-    if (current_night >= 4) {
+    bool is_twitching_viewed = false;
+    if (current_night >= 4 && camera_system_is_open()) {
         int b_room = animatronics_get_bonnie_room();
         int c_room = animatronics_get_chica_room();
-        
-        if (b_room == CAM_2B || c_room == CAM_4B) {
-            if (rand() % 60 == 0) { 
+        int current_cam = camera_system_get_current_cam();
+
+        if ((b_room == CAM_2B && current_cam == CAM_2B) || 
+            (c_room == CAM_4B && current_cam == CAM_4B)) {
+            is_twitching_viewed = true;
+        }
+    }
+
+    if (is_twitching_viewed) {
+        if (rand() % 30 == 0) { 
+            if (channel_garble == -1 || !Mix_Playing(channel_garble)) {
                 int r_garble = rand() % 4;
-                int vol = 25; 
-                
-                if (camera_system_is_open()) {
-                    int current_cam = camera_system_get_current_cam();
-                    if ((b_room == CAM_2B && current_cam == CAM_2B) || 
-                        (c_room == CAM_4B && current_cam == CAM_4B)) {
-                        vol = 100;
-                    } else {
-                        vol = 50; 
-                    }
-                }
-                play_sfx_vol(sfx_hallucination[r_garble], vol);
+                audio_set_sfx_volume(sfx_hallucination[r_garble], 100);
+                channel_garble = audio_play_sfx_chunk(sfx_hallucination[r_garble]);
             }
+        }
+    } else {
+        if (channel_garble != -1) {
+            audio_stop_channel(channel_garble);
+            channel_garble = -1;
         }
     }
 }
@@ -458,6 +501,36 @@ static void update_breath_and_death(void) {
     }
 }
 
+static void update_freddy_office_logic(void) {
+    if (animatronics_get_freddy_room() == ROOM_OFFICE) {
+        if (channel_whisper == -1 || !Mix_Playing(channel_whisper)) {
+            if (sfx_whisper) {
+                audio_set_sfx_volume(sfx_whisper, 100);
+                channel_whisper = audio_play_sfx_chunk(sfx_whisper);
+            }
+        }
+
+        if (!camera_system_is_open()) {
+            if (++freddy_attack_timer >= 60) {
+                freddy_attack_timer = 0;
+                if (rand() % 4 == 0) {
+                    if (!is_bonnie_jumpscare && !is_chica_jumpscare && !is_foxy_jumpscare && !is_freddy_jumpscare) {
+                        trigger_jumpscare(&is_freddy_jumpscare, false);
+                    }
+                }
+            }
+        } else {
+            freddy_attack_timer = 0;
+        }
+    } else {
+        freddy_attack_timer = 0;
+        if (channel_whisper != -1) {
+            audio_stop_channel(channel_whisper);
+            channel_whisper = -1;
+        }
+    }
+}
+
 static void update_door_frame(float* frame, bool door_on) {
     if (door_on)  { if (*frame < DOOR_FRAMES - 1) *frame += DOOR_ANIM_SPEED; }
     else          { if (*frame > 0.0f)             *frame -= DOOR_ANIM_SPEED; }
@@ -482,9 +555,6 @@ void game_update(void) {
         
         camera_system_update(); 
 
-        // --- CORRECCIÓN DEFINITIVA: PÉRDIDA TOTAL DE CONTROL ---
-        // Bonnie y Chica te giran la cabeza al centro.
-        // Freddy y Foxy te atacan en el ángulo en el que estés, pero la cámara queda congelada.
         if (is_bonnie_jumpscare || is_chica_jumpscare) {
             camera_x = 160.0f;
         }
@@ -496,7 +566,6 @@ void game_update(void) {
             chica_jumpscare_frame += JUMPSCARE_ANIM_SPEED;
             if (chica_jumpscare_frame >= JUMPSCARE_CHICA_FRAMES) chica_jumpscare_frame = 0.0f;
         } else if (is_foxy_jumpscare) {
-            // --- FOXY: Usa su propia velocidad y no loopea (se queda en el último frame) ---
             if (foxy_jumpscare_frame < JUMPSCARE_FOXY_FRAMES - 1) {
                 foxy_jumpscare_frame += JUMPSCARE_FOXY_SPEED;
             }
@@ -528,11 +597,39 @@ void game_update(void) {
         audio_stop_channel(channel_fan);     audio_stop_channel(channel_kitchen);
         audio_stop_channel(channel_music_box); 
         audio_stop_channel(channel_pirate_song);
-        channel_light_L = channel_light_R = channel_fan = channel_kitchen = channel_music_box = -1;
+        audio_stop_channel(channel_whisper);
+        audio_stop_channel(channel_phone); // <-- AÑADIDO: Calla la llamada en apagón
+        channel_light_L = channel_light_R = channel_fan = channel_kitchen = channel_music_box = channel_whisper = channel_phone = -1;
         left_light_on = right_light_on = false;
         if (left_door_on)  { left_door_on  = false; audio_play_sfx_chunk(sfx_door); }
         if (right_door_on) { right_door_on = false; audio_play_sfx_chunk(sfx_door); }
         camera_system_force_close();
+    }
+
+    // --- LÓGICA DE LA LLAMADA TELEFÓNICA  ---
+    // 1. Temporizador inicial (espera antes de sonar)
+    if (phone_delay_timer > 0 && !is_power_out) {
+        if (--phone_delay_timer <= 0 && sfx_phone_call) {
+            audio_set_sfx_volume(sfx_phone_call, 100);
+            channel_phone = audio_play_sfx_chunk(sfx_phone_call);
+        }
+    } 
+    // 2. Control de la llamada en curso
+    else if (!is_power_out && !call_finished && channel_phone != -1) {
+        if (!Mix_Playing(channel_phone)) {
+            call_finished = true;
+            channel_phone = -1;
+        } else {
+            if (camera_system_is_open()) audio_set_channel_volume(channel_phone, 50);
+            else audio_set_channel_volume(channel_phone, 100);
+
+            if (!camera_system_is_open() && input_get_button_down(HidNpadButton_Minus)) {
+                is_call_muted = true;
+                call_finished = true;
+                audio_stop_channel(channel_phone);
+                channel_phone = -1; 
+            }
+        }
     }
 
     if (current_hour >= 6 && !is_winning) {
@@ -547,23 +644,26 @@ void game_update(void) {
     }
 
     random_sound_timer++;
-    if (random_sound_timer % 300 == 0 && (rand() % 30) == 0) {
-        if (channel_circus == -1 || !Mix_Playing(channel_circus))
-            channel_circus = audio_play_sfx_chunk(sfx_circus);
+    if (random_sound_timer % 300 == 0) { 
+        if ((rand() % 30) == 0) {
+            if (channel_circus == -1 || !Mix_Playing(channel_circus)) {
+                channel_circus = audio_play_sfx_chunk(sfx_circus); 
+            }
+        }
     }
-    if (random_sound_timer % 600 == 0 && (rand() % 50) == 0) {
-        int vol = 10 + (rand() % 40);
-        audio_set_sfx_volume(sfx_pounding, vol);
-        audio_play_sfx_chunk(sfx_pounding);
+    if (random_sound_timer % 600 == 0) { 
+        if ((rand() % 50) == 0) {
+            int vol = 10 + (rand() % 40); 
+            audio_set_sfx_volume(sfx_pounding, vol);
+            audio_play_sfx_chunk(sfx_pounding); 
+        }
     }
 
     if (!is_power_out) {
         animatronics_update(left_door_on, right_door_on, camera_system_is_open());
         update_animatronic_sounds();
 
-        // --- RESOLUCIÓN DEL ATAQUE DE FOXY ---
         if (animatronics_get_foxy_state() == 5 && !is_foxy_jumpscare) {
-            // Foxy te ataca incluso con la cámara subida. Te arranca el monitor de las manos.
             if (camera_system_is_open()) {
                 camera_system_toggle(); 
             }
@@ -591,9 +691,10 @@ void game_update(void) {
         update_hallucination();
         update_kitchen_audio();
         update_breath_and_death();
+        update_freddy_office_logic();
     } else {
         hallucination_timer = current_hallucination = 0; current_hallucination = -1;
-        breath_timer = bonnie_force_down_timer = chica_force_down_timer = kitchen_timer = 0;
+        breath_timer = bonnie_force_down_timer = chica_force_down_timer = kitchen_timer = freddy_attack_timer = 0;
     }
 
     if (!camera_system_is_open() && camera_system_get_frame() <= 0.0f) {
@@ -607,6 +708,14 @@ void game_update(void) {
 
     if (!is_power_out) {
         if (!camera_system_is_open()) {
+            
+            if (input_get_button_down(HidNpadButton_StickL)) {
+                if (sfx_nose_honk && (channel_nose == -1 || !Mix_Playing(channel_nose))) {
+                    audio_set_sfx_volume(sfx_nose_honk, 100);
+                    channel_nose = audio_play_sfx_chunk(sfx_nose_honk); 
+                }
+            }
+
             if (input_get_button_down(HidNpadButton_L)) {
                 if (animatronics_get_bonnie_room() == ROOM_OFFICE) audio_play_sfx_chunk(sfx_error);
                 else if (door_L_frame <= 0.0f || door_L_frame >= DOOR_FRAMES - 1) {
@@ -640,13 +749,11 @@ void game_update(void) {
                 audio_set_sfx_volume(sfx_fan, 10);
             } else {
                 audio_set_sfx_volume(sfx_fan, 25);
-                // --- Foxy ya no está en este bloque porque ataca de forma autónoma arriba ---
+                
                 if      (animatronics_get_bonnie_room() == ROOM_OFFICE && !is_chica_jumpscare && !is_freddy_jumpscare && !is_foxy_jumpscare)
                     trigger_jumpscare(&is_bonnie_jumpscare, true);
                 else if (animatronics_get_chica_room()  == ROOM_OFFICE && !is_bonnie_jumpscare && !is_freddy_jumpscare && !is_foxy_jumpscare)
                     trigger_jumpscare(&is_chica_jumpscare, true);
-                else if (animatronics_get_freddy_room() == ROOM_OFFICE && !is_bonnie_jumpscare && !is_chica_jumpscare && !is_foxy_jumpscare)
-                    trigger_jumpscare(&is_freddy_jumpscare, false); 
             }
         }
     }
@@ -720,7 +827,6 @@ void game_draw(void) {
     if (!is_power_out) {
         bool cam_full = (camera_system_is_open() && camera_system_get_frame() >= (CAM_FRAMES - 1));
         
-        // --- EL VENTILADOR SE DIBUJA DETRÁS ---
         if (!cam_full) {
             if (tex_fan[fan_frame]) {
                 int w, h;
@@ -733,17 +839,14 @@ void game_draw(void) {
 
     power_system_draw_jumpscare();
     
-    // --- LOS MONSTRUOS SE DIBUJAN AQUÍ ---
     if      (is_bonnie_jumpscare) draw_jumpscare(tex_bonnie_jumpscare, JUMPSCARE_BONNIE_FRAMES, bonnie_jumpscare_frame);
     else if (is_chica_jumpscare)  draw_jumpscare(tex_chica_jumpscare,  JUMPSCARE_CHICA_FRAMES,  chica_jumpscare_frame);
     else if (is_freddy_jumpscare) draw_jumpscare(tex_freddy_jumpscare, JUMPSCARE_FREDDY_FRAMES, freddy_jumpscare_frame);
     else if (is_foxy_jumpscare)   draw_jumpscare(tex_foxy_jumpscare,   JUMPSCARE_FOXY_FRAMES,   foxy_jumpscare_frame);
 
-    // --- LOS BOTONES DE LA HABITACIÓN SE DIBUJAN AQUÍ ---
     if (!is_power_out) {
         bool cam_full = (camera_system_is_open() && camera_system_get_frame() >= (CAM_FRAMES - 1));
         
-        // Los botones de las puertas desaparecen si Freddy te ataca
         if (!cam_full && !is_freddy_jumpscare) {
             int sL = (left_door_on ? 1 : 0) | (left_light_on  ? 2 : 0);
             int sR = (right_door_on? 1 : 0) | (right_light_on ? 2 : 0);
@@ -757,18 +860,20 @@ void game_draw(void) {
             }
         }
         
-        // El botón de cámara desaparece solo con Bonnie y Chica
+        // --- Dibujar el botón Mute Call estático arriba a la izquierda ---
+        if (!cam_full && !call_finished && !is_call_muted && channel_phone != -1 && tex_button_call) {
+            SDL_Rect dst = {27, 22, 121, 31};
+            SDL_RenderCopy(renderer, tex_button_call, NULL, &dst);
+        }
+
         bool is_bonnie_or_chica = (is_bonnie_jumpscare || is_chica_jumpscare);
         if (!is_bonnie_or_chica) {
             camera_system_draw_button();
         }
     }
 
-    // --- CAMBIO: LA ANIMACIÓN DE LA TABLETA SE DIBUJA AHORA ---
-    // (Al dibujarla aquí, tapará físicamente a los botones mientras sube/baja)
     camera_system_draw_animation();
 
-    // --- EL HUD SE DIBUJA AL FINAL (Siempre por encima de la tableta) ---
     if (!is_power_out) {
         hud_draw(camera_system_is_open(), camera_system_get_frame());
         power_system_draw_hud(camera_system_is_open(), camera_system_get_frame());
@@ -799,9 +904,9 @@ void game_cleanup(void) {
     SDL_Texture* single_texs[] = {
         tex_office_normal, tex_office_light_L, tex_office_light_R,
         tex_office_blackout, tex_office_blackout_freddy,
-        tex_office_bonnie, tex_office_chica
+        tex_office_bonnie, tex_office_chica, tex_button_call // <-- AÑADIDO
     };
-    for (int i = 0; i < 7; i++)
+    for (int i = 0; i < 8; i++) // <-- Cambiado de 7 a 8
         if (single_texs[i]) { SDL_DestroyTexture(single_texs[i]); single_texs[i] = NULL; }
 
     destroy_textures(tex_door_L_close, DOOR_FRAMES);
@@ -818,10 +923,11 @@ void game_cleanup(void) {
     audio_stop_music();
     audio_stop_all_sfx();
 
+    // --- AÑADIDO: Limpieza de sfx_phone_call ---
     Mix_Chunk* single_sfx[] = {sfx_fan, sfx_light, sfx_door, sfx_circus, sfx_pounding,
                                 sfx_window_scare, sfx_error, sfx_steps, sfx_jumpscare, 
-                                sfx_running_fast, sfx_knock, sfx_pirate_song}; 
-    for (int i = 0; i < 12; i++) 
+                                sfx_running_fast, sfx_knock, sfx_pirate_song, sfx_nose_honk, sfx_whisper, sfx_phone_call}; 
+    for (int i = 0; i < 15; i++) // <-- Cambiado de 14 a 15
         if (single_sfx[i]) audio_free_sfx(single_sfx[i]);
 
     if (sfx_music_box) audio_free_sfx(sfx_music_box); 

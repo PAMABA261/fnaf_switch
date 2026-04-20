@@ -16,6 +16,15 @@ static SDL_Texture* tex_cam[CAM_FRAMES] = {NULL};
 static SDL_Texture* tex_button_cam = NULL; 
 static SDL_Texture* tex_rooms[11] = {NULL}; 
 
+// --- ALUCINACIONES VISUALES ---
+static int random_for_pic = 1; // El dado ahora vive aquí
+static SDL_Texture* tex_cam5_heads_stare = NULL;
+static SDL_Texture* tex_cam4a_itsme = NULL;
+static SDL_Texture* tex_cam4a_crying = NULL;
+static SDL_Texture* tex_cam4b_news[4] = {NULL};
+static SDL_Texture* tex_cam1c_itsme = NULL;
+static SDL_Texture* tex_cam2b_hallucination = NULL;
+
 // Variables de Bonnie
 static SDL_Texture* tex_rooms_bonnie[11] = {NULL}; 
 static SDL_Texture* tex_stage_no_bonnie = NULL;    
@@ -97,7 +106,6 @@ static float rec_blink_frame = 0.0f;
 static const float UI_ANIM_SPEED = 0.02f;
 static int map_frame = 0;
 static bool rec_visible = true;
-static bool is_backstage_bonnie_close = false; 
 
 static Mix_Chunk* sfx_cam_up = NULL;
 static Mix_Chunk* sfx_cam_down = NULL;
@@ -137,6 +145,17 @@ void camera_system_init(void) {
     tex_rooms[CAM_5]  = graphics_load_texture(IMG_BACKSTAGE_1);
     tex_rooms[CAM_6]  = NULL; 
     tex_rooms[CAM_7]  = graphics_load_texture(IMG_RESTROOMS_1);
+
+    // --- CARGA DE ALUCINACIONES ---
+    tex_cam5_heads_stare = graphics_load_texture(IMG_BACKSTAGE_4);
+    tex_cam4a_crying = graphics_load_texture(IMG_EAST_HALL_5);
+    tex_cam4a_itsme = graphics_load_texture(IMG_EAST_HALL_6);
+    tex_cam4b_news[0] = graphics_load_texture(IMG_EAST_HALL_CORNER_6);
+    tex_cam4b_news[1] = graphics_load_texture(IMG_EAST_HALL_CORNER_7);
+    tex_cam4b_news[2] = graphics_load_texture(IMG_EAST_HALL_CORNER_8);
+    tex_cam4b_news[3] = graphics_load_texture(IMG_EAST_HALL_CORNER_9);
+    tex_cam1c_itsme = graphics_load_texture(IMG_PIRATE_COVE_5);
+    tex_cam2b_hallucination = graphics_load_texture(IMG_WEST_HALL_CORNER_5);
 
     tex_rooms_bonnie[CAM_1A] = graphics_load_texture(IMG_SHOW_STAGE_1); 
     tex_rooms_bonnie[CAM_1B] = graphics_load_texture(IMG_DINNING_AREA_2); 
@@ -211,7 +230,7 @@ void camera_system_init(void) {
     sfx_cam_down = audio_load_sfx("romfs:/sfx/put_down.wav");
     sfx_cam_blip = audio_load_sfx("romfs:/sfx/blip3.wav"); 
     sfx_cam_static = audio_load_sfx("romfs:/sfx/MiniDV_Tape_Eject_1.wav");
-    sfx_foxy_run = audio_load_sfx("romfs:/sfx/running fast3.wav"); // Audio Foxy Corriendo
+    sfx_foxy_run = audio_load_sfx("romfs:/sfx/running fast3.wav"); 
 
     sfx_garble[0] = audio_load_sfx("romfs:/sfx/garble1.wav");
     sfx_garble[1] = audio_load_sfx("romfs:/sfx/garble2.wav");
@@ -226,8 +245,8 @@ void camera_system_init(void) {
     cam_pan_x = 0.0f; cam_pan_dir = 1; cam_pause_timer = 0; 
     map_anim_frame = 0.0f; rec_blink_frame = 0.0f; foxy_run_frame = 0.0f;
     map_frame = 0; rec_visible = true; is_blipping = false; blip_anim_frame = 0.0f;
-    is_backstage_bonnie_close = false;
     cam_blackout_timer = 0; 
+    random_for_pic = 1;
 }
 
 void camera_system_update(void) {
@@ -303,10 +322,9 @@ void camera_system_update(void) {
             blip_anim_frame = 0.0f;
             audio_play_sfx_chunk(sfx_cam_blip);
 
-            // --- LÓGICA DE FOXY: Disparo si miramos la 2A y él ha escapado ---
             if (current_cam == CAM_2A && animatronics_get_foxy_state() == 3) {
-                animatronics_trigger_foxy_run(); // Cambia a estado 4
-                foxy_run_frame = 0.0f;           // Inicia la animación de correr
+                animatronics_trigger_foxy_run(); 
+                foxy_run_frame = 0.0f;           
                 if (sfx_foxy_run) {
                     audio_set_sfx_volume(sfx_foxy_run, 100);
                     audio_play_sfx_chunk(sfx_foxy_run);
@@ -396,7 +414,6 @@ void camera_system_update(void) {
             if (cam_pause_timer >= 100) cam_pan_dir = 1; 
         }
 
-        // --- ANIMACIÓN FOXY CORRIENDO ---
         if (current_cam == CAM_2A && animatronics_get_foxy_state() == 4) {
             if (foxy_run_frame < FOXY_RUN_FRAMES - 1) {
                 foxy_run_frame += foxy_run_speed; 
@@ -414,10 +431,13 @@ void camera_system_draw_room(void) {
             SDL_Rect fullscreen = {0, 0, 1280, 720};
             SDL_RenderFillRect(renderer, &fullscreen);
         } else {
+            // Usamos el dado local
+            int r = random_for_pic;
+
             int bonnie_room = animatronics_get_bonnie_room();
             int chica_room = animatronics_get_chica_room();
             int freddy_room = animatronics_get_freddy_room(); 
-            int foxy_state = animatronics_get_foxy_state(); // Obtenemos estado de Foxy
+            int foxy_state = animatronics_get_foxy_state(); 
 
             static Uint64 last_fx_time = 0;
             static int current_twitch_frame = 1; 
@@ -430,7 +450,21 @@ void camera_system_draw_room(void) {
 
             SDL_Texture* bg_to_draw = tex_rooms[current_cam];
 
-            // 1. LÓGICA DEL SHOW STAGE (CAM_1A)
+            // --- Lógica de Alucinaciones base ---
+            if (current_cam == CAM_5 && r <= 5) {
+                bg_to_draw = tex_cam5_heads_stare;
+            }
+            else if (current_cam == CAM_4A) {
+                if (r == 99) bg_to_draw = tex_cam4a_itsme;
+                else if (r == 100) bg_to_draw = tex_cam4a_crying;
+            }
+            else if (current_cam == CAM_4B) {
+                if (r >= 97 && r <= 100) bg_to_draw = tex_cam4b_news[r - 97];
+            }
+            else if (current_cam == CAM_2B && r == 2) {
+                bg_to_draw = tex_cam2b_hallucination;
+            }
+
             if (current_cam == CAM_1A) {
                 if (bonnie_room == CAM_1A && chica_room == CAM_1A && freddy_room == CAM_1A) bg_to_draw = tex_rooms[CAM_1A];
                 else if (bonnie_room != CAM_1A && chica_room == CAM_1A && freddy_room == CAM_1A) bg_to_draw = tex_stage_no_bonnie;
@@ -438,26 +472,26 @@ void camera_system_draw_room(void) {
                 else if (bonnie_room != CAM_1A && chica_room != CAM_1A && freddy_room == CAM_1A) bg_to_draw = tex_stage_freddy_only;
                 else bg_to_draw = tex_stage_nobody; 
             }
-            // 2. LÓGICA PIRATE COVE (CAM_1C)
             else if (current_cam == CAM_1C) {
-                if (foxy_state == 0) bg_to_draw = tex_pirate_cove[0];      // Cortina cerrada
-                else if (foxy_state == 1) bg_to_draw = tex_pirate_cove[1]; // Asomando
-                else if (foxy_state == 2) bg_to_draw = tex_pirate_cove[2]; // Fuera
-                else bg_to_draw = tex_pirate_cove[3];                      // Cortina vacía (estados 3, 4 y 5)
+                if (foxy_state == 0) bg_to_draw = tex_pirate_cove[0];      
+                else if (foxy_state == 1) bg_to_draw = tex_pirate_cove[1]; 
+                else if (foxy_state == 2) bg_to_draw = tex_pirate_cove[2]; 
+                else {
+                    if (r <= 10) bg_to_draw = tex_cam1c_itsme;
+                    else bg_to_draw = tex_pirate_cove[3]; 
+                }
             }
             else {
-                // 3. CAPA DE FREDDY
                 if (freddy_room == current_cam && tex_rooms_freddy[current_cam] != NULL) {
                     bg_to_draw = tex_rooms_freddy[current_cam];
                 }
 
-                // 4. CAPA DE BONNIE
                 if (bonnie_room == current_cam && tex_rooms_bonnie[current_cam] != NULL) {
                     int bonnie_pose = animatronics_get_bonnie_pose();
                     if (current_cam == CAM_1B) {
                         bg_to_draw = (bonnie_pose == 1) ? tex_dining_bonnie_close : tex_rooms_bonnie[CAM_1B];
                     } else if (current_cam == CAM_5) {
-                        bg_to_draw = (is_backstage_bonnie_close) ? tex_backstage_bonnie_close : tex_rooms_bonnie[CAM_5];
+                        bg_to_draw = (r <= 10) ? tex_backstage_bonnie_close : tex_rooms_bonnie[CAM_5];
                     } else if (current_cam == CAM_2B) {
                         if (current_night >= 4) {
                             if (current_twitch_frame < 25) bg_to_draw = tex_rooms_bonnie[CAM_2B];
@@ -470,7 +504,6 @@ void camera_system_draw_room(void) {
                         bg_to_draw = tex_rooms_bonnie[current_cam];
                     }
                 }
-                // 5. CAPA DE CHICA
                 else if (chica_room == current_cam && tex_rooms_chica[current_cam] != NULL) {
                     int chica_pose = animatronics_get_chica_pose();
                     if (current_cam == CAM_1B) {
@@ -492,7 +525,6 @@ void camera_system_draw_room(void) {
                     }
                 }
 
-                // 6. LÓGICA ESPECIAL DEL PASILLO OESTE (CAM_2A)
                 if (current_cam == CAM_2A) {
                     if (rand() % 100 < 70) {
                         bg_to_draw = tex_west_hall_dark; 
@@ -507,7 +539,6 @@ void camera_system_draw_room(void) {
             }
 
             if (bg_to_draw) {
-                // --- EL APAGÓN VISUAL ---
                 if (cam_blackout_timer > 0) {
                     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
                     SDL_Rect black_screen = {0, 0, 1280, 720};
@@ -516,7 +547,6 @@ void camera_system_draw_room(void) {
                     SDL_Rect src_rect = {(int)cam_pan_x, 0, 1280, 720};
                     SDL_RenderCopy(renderer, bg_to_draw, &src_rect, NULL);
 
-                    // --- DIBUJAR FOXY CORRIENDO SOBRE LA 2A ---
                     if (current_cam == CAM_2A && foxy_state == 4) {
                         int f_idx = (int)foxy_run_frame;
                         if (f_idx >= FOXY_RUN_FRAMES) f_idx = FOXY_RUN_FRAMES - 1;
@@ -590,7 +620,6 @@ void camera_system_draw_ui(void) {
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
         }
 
-        // Localizador Foxy (Solo en 1C o 2A)
         int foxy_state = animatronics_get_foxy_state();
         if (foxy_state < 3) {
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
@@ -633,6 +662,13 @@ void camera_system_cleanup(void) {
     if (tex_button_cam) SDL_DestroyTexture(tex_button_cam);
     if (tex_kitchen_sound) SDL_DestroyTexture(tex_kitchen_sound);
     
+    if (tex_cam5_heads_stare) SDL_DestroyTexture(tex_cam5_heads_stare);
+    if (tex_cam4a_crying) SDL_DestroyTexture(tex_cam4a_crying);
+    if (tex_cam4a_itsme) SDL_DestroyTexture(tex_cam4a_itsme);
+    for (int i=0; i<4; i++) if (tex_cam4b_news[i]) SDL_DestroyTexture(tex_cam4b_news[i]);
+    if (tex_cam1c_itsme) SDL_DestroyTexture(tex_cam1c_itsme);
+    if (tex_cam2b_hallucination) SDL_DestroyTexture(tex_cam2b_hallucination);
+
     for (int i = 0; i < CAM_FRAMES; i++) {
         if (tex_cam[i]) SDL_DestroyTexture(tex_cam[i]);
     }
@@ -648,7 +684,6 @@ void camera_system_cleanup(void) {
         if (tex_rooms_freddy[i]) SDL_DestroyTexture(tex_rooms_freddy[i]);
     }
 
-    // Limpiar Foxy
     for (int i = 0; i < 4; i++) {
         if (tex_pirate_cove[i]) SDL_DestroyTexture(tex_pirate_cove[i]);
     }
@@ -702,9 +737,7 @@ void camera_system_toggle(void) {
             audio_play_sfx_chunk(sfx_cam_up);
             is_blipping = true; blip_anim_frame = 0.0f;
             audio_set_channel_volume(channel_cam_static, 100);
-            is_backstage_bonnie_close = (rand() % 100 < 10);
             
-            // --- FOXY: Si lo pilla la cámara nada más abrirla ---
             if (current_cam == CAM_2A && animatronics_get_foxy_state() == 3) {
                 animatronics_trigger_foxy_run();
                 foxy_run_frame = 0.0f;
@@ -716,6 +749,9 @@ void camera_system_toggle(void) {
         } else {
             audio_play_sfx_chunk(sfx_cam_down);
             audio_set_channel_volume(channel_cam_static, 0);
+            
+            // Tiramos el dado exactamente cuando cerramos el monitor
+            random_for_pic = (rand() % 100) + 1;
         }
     }
 }

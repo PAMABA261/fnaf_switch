@@ -169,8 +169,8 @@ static void update_foxy(bool left_door_closed, bool camera_is_open) {
         
         // Si pasan 1500 frames (25 segundos) sin mirar el pasillo 2A, ataca
         if (foxy_action_timer >= 1500) {
-            foxy_state = 5; 
-            foxy_action_timer = 0;
+            // --- CORRECCIÓN: Fuerza su carrera hacia la puerta (Estado 4) en lugar del Jumpscare (Estado 5) ---
+            animatronics_trigger_foxy_run(); 
         }
     }
     else if (foxy_state == 4) {
@@ -227,7 +227,6 @@ void animatronics_on_hour_changed(int new_hour) {
     else if (new_hour == 3 || new_hour == 4) {
         bonnie.ai_level++;
         chica.ai_level++;
-        freddy.ai_level++;
         foxy_ai_level++; 
     }
 }
@@ -255,9 +254,8 @@ bool animatronics_get_foxy_just_banged(void)   { return foxy_just_banged; }
 int animatronics_get_foxy_bang_count(void)     { return foxy_bang_count; }
 
 void animatronics_trigger_foxy_run(void) {
-    // Si la cámara 2A lo pilla escapado (estado 3), se lanza a correr hacia la puerta (estado 4)
     if (foxy_state == 3) {
         foxy_state = 4;
-        foxy_action_timer = 0; // Reseteamos para que tarde exactamente 100 frames en golpear
+        foxy_action_timer = 0; 
     }
 }
