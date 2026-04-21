@@ -43,7 +43,7 @@ fnaf_switch/
 │   │   ├── graphics.c          # Motor gráfico
 │   │   └── input.c             # Gestión de controles
 │   └── game/
-│       ├── game.c              # Loop principal del juego
+│       ├── game.c              # Pantalla de Oficina
 │       ├── camera_system.c     # Sistema de cámaras
 │       ├── power_system.c      # Sistema de energía
 │       ├── save_system.c       # Guardado/carga de partida
@@ -55,7 +55,7 @@ fnaf_switch/
 │       ├── 6am.c               # Pantalla de victoria (6 AM)
 │       ├── warning.c           # Pantalla de advertencia inicial
 │       ├── what_day.c          # Selector de noche
-│       └── ad.c                # Pantalla de créditos/anuncio
+│       └── ad.c                # Pantalla de anuncio
 ├── include/
 │   ├── engine/                 # Headers del motor
 │   └── game/                   # Headers del juego
@@ -107,7 +107,7 @@ Esto generará el archivo `fnaf_switch.nro` listo para ejecutar.
 
 ## ⚠️ Aviso legal
 
-Este proyecto es un **fan-made homebrew** sin fines comerciales. Five Nights at Freddy's y todos sus personajes son propiedad de **Scott Cawthon / Steel Wool Studios**. Los assets de audio y gráficos originales pertenecen a sus respectivos autores.
+Este proyecto es un **fan-made homebrew** sin fines comerciales. Five Nights at Freddy's y todos sus personajes son propiedad de **Scott Cawthon**. Los assets de audio y gráficos originales pertenecen a sus respectivos autores.
 
 Este proyecto es solo para uso educativo y personal.
 
