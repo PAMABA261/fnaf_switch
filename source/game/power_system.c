@@ -223,9 +223,10 @@ bool power_system_update(int items_on) {
             }
 
         } else if (powerout_state == 4) {
-            jumpscare_frame += JUMPSCARE_ANIM_SPEED;  
-            if (jumpscare_frame >= JUMPSCARE_FRAMES) {
-                state_manager_change(STATE_TITLE); 
+            if (jumpscare_frame < JUMPSCARE_FRAMES - 1) {
+                jumpscare_frame += JUMPSCARE_ANIM_SPEED;  
+            } else {
+                state_manager_change(STATE_GAMEOVER); 
             }
         }
     }

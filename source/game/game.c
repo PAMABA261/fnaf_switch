@@ -587,23 +587,19 @@ void game_update(void) {
             }
         }
 
-        // --- NUEVA LÓGICA HÍBRIDA DE FIN DE JUMPSCARE ---
         bool jumpscare_finished = false;
 
         if (is_bonnie_jumpscare || is_chica_jumpscare) {
-            // Bonnie y Chica loopean: Usamos tu temporizador de 85 frames
             if (++jumpscare_duration_timer >= 85) {
                 jumpscare_finished = true;
             }
         } 
         else if (is_foxy_jumpscare) {
-            // Foxy: Game Over al llegar a su último fotograma
             if (foxy_jumpscare_frame >= (JUMPSCARE_FOXY_FRAMES - 1)) {
                 jumpscare_finished = true;
             }
         } 
         else if (is_freddy_jumpscare) {
-            // Freddy: Game Over al llegar a su último fotograma
             if (freddy_jumpscare_frame >= (JUMPSCARE_FREDDY_FRAMES - 1)) {
                 jumpscare_finished = true;
             }
@@ -612,9 +608,7 @@ void game_update(void) {
         if (jumpscare_finished) {
             state_manager_change(STATE_GAMEOVER);
         }
-        // --- FIN DE LA NUEVA LÓGICA ---
-
-        return; // ¡Todo lo que hay debajo de este return se queda igual!
+        return; 
     }
 
     hud_update();
@@ -624,26 +618,34 @@ void game_update(void) {
     bool just_blacked_out = power_system_update(items_on);
 
     if (just_blacked_out) {
-        audio_stop_channel(channel_light_L); audio_stop_channel(channel_light_R);
-        audio_stop_channel(channel_fan);     audio_stop_channel(channel_kitchen);
+        // --- LIMPIEZA TOTAL DE AUDIO DE APOYO ---
+        audio_stop_channel(channel_light_L); 
+        audio_stop_channel(channel_light_R);
+        audio_stop_channel(channel_fan);     
+        audio_stop_channel(channel_kitchen);
         audio_stop_channel(channel_music_box); 
-        audio_stop_channel(channel_pirate_song);
-        audio_stop_channel(channel_whisper);
-        audio_stop_channel(channel_phone); // <-- AÑADIDO: Calla la llamada en apagón
-        channel_light_L = channel_light_R = channel_fan = channel_kitchen = channel_music_box = channel_whisper = channel_phone = -1;
+        audio_stop_channel(channel_pirate_song); // Canción de Foxy
+        audio_stop_channel(channel_whisper);     // Susurros de Freddy
+        audio_stop_channel(channel_phone);       // Llamada del tipo del teléfono
+        audio_stop_channel(channel_circus);      // Música de circo
+        audio_stop_channel(channel_garble);      // Alucinaciones robóticas
+        audio_stop_channel(channel_breath);      // Respiraciones en la puerta
+        
+        // Reseteamos todas las variables para evitar que intenten reanudarse
+        channel_light_L = channel_light_R = channel_fan = channel_kitchen = -1;
+        channel_music_box = channel_whisper = channel_phone = channel_circus = -1;
+        channel_pirate_song = channel_garble = channel_breath = -1;
+        
         left_light_on = right_light_on = false;
         if (left_door_on)  { left_door_on  = false; audio_play_sfx_chunk(sfx_door); }
         if (right_door_on) { right_door_on = false; audio_play_sfx_chunk(sfx_door); }
         camera_system_force_close();
     }
 
-    // --- LÓGICA DE LA LLAMADA TELEFÓNICA  ---
-    // 1. Temporizador del botón Mute (espera 2 segundos antes de aparecer)
     if (phone_delay_timer > 0 && !is_power_out) {
         phone_delay_timer--;
     } 
     
-    // 2. Control de la llamada en curso
     if (!is_power_out && !call_finished && channel_phone != -1) {
         if (!Mix_Playing(channel_phone)) {
             call_finished = true;
@@ -652,7 +654,6 @@ void game_update(void) {
             if (camera_system_is_open()) audio_set_channel_volume(channel_phone, 50);
             else audio_set_channel_volume(channel_phone, 100);
 
-            // Solo permitimos mutear si el botón ya es visible (phone_delay_timer <= 0)
             if (phone_delay_timer <= 0 && !camera_system_is_open() && input_get_button_down(HidNpadButton_Minus)) {
                 is_call_muted = true;
                 call_finished = true;
@@ -668,36 +669,35 @@ void game_update(void) {
 
     if (current_hour >= 6 && !is_winning) {
         is_winning = true;
-
     }
 
     if (is_winning) {
-    win_fade += 8.0f;
-    if (win_fade >= 255.0f) {
-        audio_stop_all_sfx(); 
-        audio_stop_music();
-        state_manager_change(STATE_6AM);
-    }
-    return;
-}
-
-    random_sound_timer++;
-    if (random_sound_timer % 300 == 0) { 
-        if ((rand() % 30) == 0) {
-            if (channel_circus == -1 || !Mix_Playing(channel_circus)) {
-                channel_circus = audio_play_sfx_chunk(sfx_circus); 
-            }
+        win_fade += 8.0f;
+        if (win_fade >= 255.0f) {
+            audio_stop_all_sfx(); 
+            audio_stop_music();
+            state_manager_change(STATE_6AM);
         }
-    }
-    if (random_sound_timer % 600 == 0) { 
-        if ((rand() % 50) == 0) {
-            int vol = 10 + (rand() % 40); 
-            audio_set_sfx_volume(sfx_pounding, vol);
-            audio_play_sfx_chunk(sfx_pounding); 
-        }
+        return;
     }
 
     if (!is_power_out) {
+        random_sound_timer++;
+        if (random_sound_timer % 300 == 0) { 
+            if ((rand() % 30) == 0) {
+                if (channel_circus == -1 || !Mix_Playing(channel_circus)) {
+                    channel_circus = audio_play_sfx_chunk(sfx_circus); 
+                }
+            }
+        }
+        if (random_sound_timer % 600 == 0) { 
+            if ((rand() % 50) == 0) {
+                int vol = 10 + (rand() % 40); 
+                audio_set_sfx_volume(sfx_pounding, vol);
+                audio_play_sfx_chunk(sfx_pounding); 
+            }
+        }
+
         animatronics_update(left_door_on, right_door_on, camera_system_is_open());
         update_animatronic_sounds();
 
