@@ -36,7 +36,6 @@ void what_day_init(void) {
     }
 
     // 2. INICIALIZACIÓN DE VARIABLES
-    audio_stop_music();
     timer = 0;
     fade_out = 0.0f;
     blip_frame = 0.0f; // Reiniciamos la animación del blip

@@ -30,7 +30,11 @@ void audio_stop_music(void) {
 }
 
 void audio_stop_all_sfx(void) {
-    Mix_HaltChannel(-1); // Detiene todos los canales de sonido
+    int total = Mix_AllocateChannels(-1);
+    for (int i = 0; i < total; i++) {
+        Mix_Volume(i, MIX_MAX_VOLUME);
+    }
+    Mix_HaltChannel(-1);
 }
 
 Mix_Chunk* audio_load_sfx(const char* path) {

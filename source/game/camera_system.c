@@ -17,7 +17,7 @@ static SDL_Texture* tex_button_cam = NULL;
 static SDL_Texture* tex_rooms[11] = {NULL}; 
 
 // --- ALUCINACIONES VISUALES ---
-static int random_for_pic = 1; // El dado ahora vive aquí
+static int random_for_pic = 50; // El dado ahora vive aquí
 static SDL_Texture* tex_cam5_heads_stare = NULL;
 static SDL_Texture* tex_cam4a_itsme = NULL;
 static SDL_Texture* tex_cam4a_crying = NULL;
@@ -246,7 +246,7 @@ void camera_system_init(void) {
     map_anim_frame = 0.0f; rec_blink_frame = 0.0f; foxy_run_frame = 0.0f;
     map_frame = 0; rec_visible = true; is_blipping = false; blip_anim_frame = 0.0f;
     cam_blackout_timer = 0; 
-    random_for_pic = 1;
+    random_for_pic = 50;
 }
 
 void camera_system_update(void) {

@@ -21,7 +21,7 @@ static float fade_in = 255.0f;
 static float fade_out = 0.0f;
 
 void state_6am_init(void) {
-    // 1. CARGA DE GRÁFICOS Y AUDIOS
+    // 1. CARGA DE GRÁFICOS Y AUDIO
     tex_5 = graphics_load_texture(IMG_6AM_5);
     tex_6 = graphics_load_texture(IMG_6AM_6);
     tex_am = graphics_load_texture(IMG_6AM_AM);
@@ -30,9 +30,6 @@ void state_6am_init(void) {
     sfx_cheer = audio_load_sfx("romfs:/sfx/CROWD_SMALL_CHIL_EC049202.wav");
 
     // 2. LÓGICA DE INICIO (Guardado y Reseteo)
-    audio_stop_all_sfx();
-    audio_stop_music();
-
     current_night++;
     if (current_night > 5) {
         current_night = 5; 

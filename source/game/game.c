@@ -151,7 +151,7 @@ static void trigger_jumpscare(bool* flag, bool play_scream_now) {
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 void game_init(void) {
-    Mix_AllocateChannels(32);
+    Mix_AllocateChannels(64);
     hud_init();
     power_system_init();
     camera_system_init();
@@ -632,16 +632,24 @@ void game_update(void) {
         }
     }
 
+    if (input_get_button_down(HidNpadButton_StickR)) {
+        current_hour = 6;
+    }
+
     if (current_hour >= 6 && !is_winning) {
         is_winning = true;
-        audio_stop_all_sfx();
-        audio_stop_music();
+
     }
+
     if (is_winning) {
-        win_fade += 8.0f;
-        if (win_fade >= 255.0f) state_manager_change(STATE_6AM);
-        return;
+    win_fade += 8.0f;
+    if (win_fade >= 255.0f) {
+        audio_stop_all_sfx(); 
+        audio_stop_music();
+        state_manager_change(STATE_6AM);
     }
+    return;
+}
 
     random_sound_timer++;
     if (random_sound_timer % 300 == 0) { 
@@ -901,12 +909,32 @@ void game_cleanup(void) {
     camera_system_cleanup();
     animatronics_cleanup();
 
+    // Parar canales explícitamente antes de liberar los chunks
+    audio_stop_channel(channel_fan);
+    audio_stop_channel(channel_light_L);
+    audio_stop_channel(channel_light_R);
+    audio_stop_channel(channel_kitchen);
+    audio_stop_channel(channel_music_box);
+    audio_stop_channel(channel_breath);
+    audio_stop_channel(channel_circus);
+    audio_stop_channel(channel_pirate_song);
+    audio_stop_channel(channel_whisper);
+    audio_stop_channel(channel_phone);
+    audio_stop_channel(channel_garble);
+    audio_stop_channel(channel_nose);
+    channel_fan = channel_light_L = channel_light_R = channel_kitchen = -1;
+    channel_music_box = channel_breath = channel_circus = channel_pirate_song = -1;
+    channel_whisper = channel_phone = channel_garble = channel_nose = -1;
+
+    audio_stop_music();
+    audio_stop_all_sfx();
+
     SDL_Texture* single_texs[] = {
         tex_office_normal, tex_office_light_L, tex_office_light_R,
         tex_office_blackout, tex_office_blackout_freddy,
-        tex_office_bonnie, tex_office_chica, tex_button_call // <-- AÑADIDO
+        tex_office_bonnie, tex_office_chica, tex_button_call
     };
-    for (int i = 0; i < 8; i++) // <-- Cambiado de 7 a 8
+    for (int i = 0; i < 8; i++)
         if (single_texs[i]) { SDL_DestroyTexture(single_texs[i]); single_texs[i] = NULL; }
 
     destroy_textures(tex_door_L_close, DOOR_FRAMES);
@@ -920,14 +948,11 @@ void game_cleanup(void) {
     destroy_textures(tex_freddy_jumpscare, JUMPSCARE_FREDDY_FRAMES);
     destroy_textures(tex_foxy_jumpscare,   JUMPSCARE_FOXY_FRAMES);
 
-    audio_stop_music();
-    audio_stop_all_sfx();
-
     // --- AÑADIDO: Limpieza de sfx_phone_call ---
     Mix_Chunk* single_sfx[] = {sfx_fan, sfx_light, sfx_door, sfx_circus, sfx_pounding,
                                 sfx_window_scare, sfx_error, sfx_steps, sfx_jumpscare, 
                                 sfx_running_fast, sfx_knock, sfx_pirate_song, sfx_nose_honk, sfx_whisper, sfx_phone_call}; 
-    for (int i = 0; i < 15; i++) // <-- Cambiado de 14 a 15
+    for (int i = 0; i < 15; i++)
         if (single_sfx[i]) audio_free_sfx(single_sfx[i]);
 
     if (sfx_music_box) audio_free_sfx(sfx_music_box); 
