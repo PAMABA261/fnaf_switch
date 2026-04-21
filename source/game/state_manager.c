@@ -26,7 +26,7 @@ void what_day_update(void);
 void what_day_draw(void);
 void what_day_cleanup(void);
 
-// Avisamos al mánager de que estas funciones existen en loading.c (NUEVO)
+// Avisamos al mánager de que estas funciones existen en loading.c 
 void loading_init(void);
 void loading_update(void);
 void loading_draw(void);
@@ -43,6 +43,12 @@ void state_6am_init(void);
 void state_6am_update(void);
 void state_6am_draw(void);
 void state_6am_cleanup(void);
+
+// Avisamos al mánager de que estas funciones existen en state_gameover.c (NUEVO)
+void state_gameover_init(void);
+void state_gameover_update(void);
+void state_gameover_draw(void);
+void state_gameover_cleanup(void);
 
 static GameState current_state;
 
@@ -78,6 +84,7 @@ void state_manager_update(void) {
             state_6am_update();
             break;
         case STATE_GAMEOVER:
+            state_gameover_update(); // <-- AÑADIDO
             break;
         case STATE_CUSTOMIZE: 
             break;
@@ -111,7 +118,7 @@ void state_manager_draw(void) {
             state_6am_draw();
             break;
         case STATE_GAMEOVER:
-            // Estática de televisión
+            state_gameover_draw(); // <-- AÑADIDO
             break;
         case STATE_CUSTOMIZE: 
             // Menú de Custom Night
@@ -140,7 +147,7 @@ void state_manager_change(GameState new_state) {
     } else if (current_state == STATE_6AM) {  
         state_6am_cleanup();
     } else if (current_state == STATE_GAMEOVER) {
-        // Limpiar la pantalla de Game Over
+        state_gameover_cleanup(); // <-- AÑADIDO
     } else if (current_state == STATE_CUSTOMIZE) {
         // Limpiar el menú de Custom Night
     } else if (current_state == STATE_THE_END) {
@@ -166,7 +173,7 @@ void state_manager_change(GameState new_state) {
     } else if(current_state == STATE_6AM) {   
         state_6am_init();
     } else if(current_state == STATE_GAMEOVER) {
-        // Inicializar la pantalla de Game Over
+        state_gameover_init(); // <-- AÑADIDO
     } else if(current_state == STATE_CUSTOMIZE) {
         // Inicializar el menú de Custom Night
     } else if(current_state == STATE_THE_END) {
@@ -183,4 +190,5 @@ void state_manager_cleanup(void) {
     else if (current_state == STATE_LOADING) loading_cleanup(); 
     else if (current_state == STATE_GAME) game_cleanup();
     else if (current_state == STATE_6AM) state_6am_cleanup();
+    else if (current_state == STATE_GAMEOVER) state_gameover_cleanup(); // <-- AÑADIDO
 }

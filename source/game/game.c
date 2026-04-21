@@ -552,19 +552,19 @@ static void toggle_light(bool* this_light, bool* other_light, int* this_ch, int*
 
 void game_update(void) {
     if (is_bonnie_jumpscare || is_chica_jumpscare || is_freddy_jumpscare || is_foxy_jumpscare) {
-        
-        camera_system_update(); 
-
+        camera_system_update();
         if (is_bonnie_jumpscare || is_chica_jumpscare) {
             camera_x = 160.0f;
         }
 
         if (is_bonnie_jumpscare) {
             bonnie_jumpscare_frame += JUMPSCARE_ANIM_SPEED;
-            if (bonnie_jumpscare_frame >= JUMPSCARE_BONNIE_FRAMES) bonnie_jumpscare_frame = 0.0f;
+            if (bonnie_jumpscare_frame >= JUMPSCARE_BONNIE_FRAMES)
+                bonnie_jumpscare_frame = 0.0f;
         } else if (is_chica_jumpscare) {
             chica_jumpscare_frame += JUMPSCARE_ANIM_SPEED;
-            if (chica_jumpscare_frame >= JUMPSCARE_CHICA_FRAMES) chica_jumpscare_frame = 0.0f;
+            if (chica_jumpscare_frame >= JUMPSCARE_CHICA_FRAMES)
+                chica_jumpscare_frame = 0.0f;
         } else if (is_foxy_jumpscare) {
             if (foxy_jumpscare_frame < JUMPSCARE_FOXY_FRAMES - 1) {
                 foxy_jumpscare_frame += JUMPSCARE_FOXY_SPEED;
@@ -581,9 +581,35 @@ void game_update(void) {
                 }
             }
         }
-        
-        if (++jumpscare_duration_timer >= 85) state_manager_change(STATE_TITLE);
-        return;
+
+        // --- NUEVA LÓGICA HÍBRIDA DE FIN DE JUMPSCARE ---
+        bool jumpscare_finished = false;
+
+        if (is_bonnie_jumpscare || is_chica_jumpscare) {
+            // Bonnie y Chica loopean: Usamos tu temporizador de 85 frames
+            if (++jumpscare_duration_timer >= 85) {
+                jumpscare_finished = true;
+            }
+        } 
+        else if (is_foxy_jumpscare) {
+            // Foxy: Game Over al llegar a su último fotograma
+            if (foxy_jumpscare_frame >= (JUMPSCARE_FOXY_FRAMES - 1)) {
+                jumpscare_finished = true;
+            }
+        } 
+        else if (is_freddy_jumpscare) {
+            // Freddy: Game Over al llegar a su último fotograma
+            if (freddy_jumpscare_frame >= (JUMPSCARE_FREDDY_FRAMES - 1)) {
+                jumpscare_finished = true;
+            }
+        }
+
+        if (jumpscare_finished) {
+            state_manager_change(STATE_GAMEOVER);
+        }
+        // --- FIN DE LA NUEVA LÓGICA ---
+
+        return; // ¡Todo lo que hay debajo de este return se queda igual!
     }
 
     hud_update();

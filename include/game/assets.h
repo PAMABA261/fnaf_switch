@@ -416,6 +416,10 @@
 #define IMG_6AM_6                     GFX_PATH "351.png" // 6
 #define IMG_6AM_AM                    GFX_PATH "352.png" // AM
 
+// Game Over
+#define IMG_GAME_OVER                 GFX_PATH "358.png"
+#define IMG_GAME_OVER_TEXT            GFX_PATH "471.png"
+
 // --- ALUCINACIONES ---
 #define IMG_FREDDY_HALLUTINATION      GFX_PATH "525.png"
 #define IMG_ITS_ME_1                  GFX_PATH "543.png"

@@ -24,6 +24,7 @@ static SDL_Texture* tex_cam4a_crying = NULL;
 static SDL_Texture* tex_cam4b_news[4] = {NULL};
 static SDL_Texture* tex_cam1c_itsme = NULL;
 static SDL_Texture* tex_cam2b_hallucination = NULL;
+static SDL_Texture* tex_stage_freddy_stare = NULL;
 
 // Variables de Bonnie
 static SDL_Texture* tex_rooms_bonnie[11] = {NULL}; 
@@ -156,6 +157,7 @@ void camera_system_init(void) {
     tex_cam4b_news[3] = graphics_load_texture(IMG_EAST_HALL_CORNER_9);
     tex_cam1c_itsme = graphics_load_texture(IMG_PIRATE_COVE_5);
     tex_cam2b_hallucination = graphics_load_texture(IMG_WEST_HALL_CORNER_5);
+    tex_stage_freddy_stare = graphics_load_texture(IMG_SHOW_STAGE_6);
 
     tex_rooms_bonnie[CAM_1A] = graphics_load_texture(IMG_SHOW_STAGE_1); 
     tex_rooms_bonnie[CAM_1B] = graphics_load_texture(IMG_DINNING_AREA_2); 
@@ -469,7 +471,11 @@ void camera_system_draw_room(void) {
                 if (bonnie_room == CAM_1A && chica_room == CAM_1A && freddy_room == CAM_1A) bg_to_draw = tex_rooms[CAM_1A];
                 else if (bonnie_room != CAM_1A && chica_room == CAM_1A && freddy_room == CAM_1A) bg_to_draw = tex_stage_no_bonnie;
                 else if (bonnie_room == CAM_1A && chica_room != CAM_1A && freddy_room == CAM_1A) bg_to_draw = tex_stage_no_chica;
-                else if (bonnie_room != CAM_1A && chica_room != CAM_1A && freddy_room == CAM_1A) bg_to_draw = tex_stage_freddy_only;
+                else if (bonnie_room != CAM_1A && chica_room != CAM_1A && freddy_room == CAM_1A) {
+                    // --- AÑADIDO: Lógica de Freddy mirando a cámara (10% de probabilidad) ---
+                    if (r <= 10) bg_to_draw = tex_stage_freddy_stare;
+                    else bg_to_draw = tex_stage_freddy_only;
+                }
                 else bg_to_draw = tex_stage_nobody; 
             }
             else if (current_cam == CAM_1C) {
@@ -707,6 +713,7 @@ void camera_system_cleanup(void) {
 
     if (tex_stage_no_chica) SDL_DestroyTexture(tex_stage_no_chica);
     if (tex_stage_freddy_only) SDL_DestroyTexture(tex_stage_freddy_only);
+    if (tex_stage_freddy_stare) SDL_DestroyTexture(tex_stage_freddy_stare);
     if (tex_dining_chica_close) SDL_DestroyTexture(tex_dining_chica_close);
     if (tex_restrooms_chica_close) SDL_DestroyTexture(tex_restrooms_chica_close);
     if (tex_east_hall_chica_close) SDL_DestroyTexture(tex_east_hall_chica_close);
