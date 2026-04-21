@@ -259,7 +259,12 @@ void game_init(void) {
 
     if (call_path[0] != '\0') {
         sfx_phone_call = audio_load_sfx(call_path);
-        phone_delay_timer = 120; 
+        // Reproducir de inmediato
+        if (sfx_phone_call) {
+            audio_set_sfx_volume(sfx_phone_call, 100);
+            channel_phone = audio_play_sfx_chunk(sfx_phone_call);
+        }
+        phone_delay_timer = 120; // 2 segundos (a 60fps) antes de que aparezca el botón MUTE
     } else {
         call_finished = true; 
     }
@@ -633,15 +638,13 @@ void game_update(void) {
     }
 
     // --- LÓGICA DE LA LLAMADA TELEFÓNICA  ---
-    // 1. Temporizador inicial (espera antes de sonar)
+    // 1. Temporizador del botón Mute (espera 2 segundos antes de aparecer)
     if (phone_delay_timer > 0 && !is_power_out) {
-        if (--phone_delay_timer <= 0 && sfx_phone_call) {
-            audio_set_sfx_volume(sfx_phone_call, 100);
-            channel_phone = audio_play_sfx_chunk(sfx_phone_call);
-        }
+        phone_delay_timer--;
     } 
+    
     // 2. Control de la llamada en curso
-    else if (!is_power_out && !call_finished && channel_phone != -1) {
+    if (!is_power_out && !call_finished && channel_phone != -1) {
         if (!Mix_Playing(channel_phone)) {
             call_finished = true;
             channel_phone = -1;
@@ -649,7 +652,8 @@ void game_update(void) {
             if (camera_system_is_open()) audio_set_channel_volume(channel_phone, 50);
             else audio_set_channel_volume(channel_phone, 100);
 
-            if (!camera_system_is_open() && input_get_button_down(HidNpadButton_Minus)) {
+            // Solo permitimos mutear si el botón ya es visible (phone_delay_timer <= 0)
+            if (phone_delay_timer <= 0 && !camera_system_is_open() && input_get_button_down(HidNpadButton_Minus)) {
                 is_call_muted = true;
                 call_finished = true;
                 audio_stop_channel(channel_phone);
@@ -895,7 +899,7 @@ void game_draw(void) {
         }
         
         // --- Dibujar el botón Mute Call estático arriba a la izquierda ---
-        if (!cam_full && !call_finished && !is_call_muted && channel_phone != -1 && tex_button_call) {
+        if (!cam_full && !call_finished && !is_call_muted && channel_phone != -1 && phone_delay_timer <= 0 && tex_button_call) {
             SDL_Rect dst = {27, 22, 121, 31};
             SDL_RenderCopy(renderer, tex_button_call, NULL, &dst);
         }

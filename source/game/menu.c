@@ -27,13 +27,12 @@ static int current_blip = 0;
 static bool show_blip = false;
 static Uint8 static_alpha = 150; 
 static Uint8 blip_alpha = 255; 
-static Uint8 freddy_alpha = 255; // NUEVO: Transparencia de Freddy
+static Uint8 freddy_alpha = 255; 
 
 static float scanline_y = -38.0f; 
 
 static int selected_option = 0; 
 
-// --- NUEVOS TEMPORIZADORES DE CLICKTEAM ---
 static Uint64 last_static_alpha_time = 0;
 static Uint64 last_80ms_time = 0;
 static Uint64 last_300ms_time = 0;
@@ -46,7 +45,6 @@ static SDL_Texture* tex_newspaper_fade = NULL;
 static Mix_Chunk* sfx_static_menu = NULL;
 static Mix_Chunk* sfx_menu_blip = NULL;
 
-// --- VARIABLES DE VELOCIDAD MATEMÁTICA ---
 static float static_anim_frame = 0.0f; 
 static const float MENU_STATIC_SPEED = 0.99f; 
 static const float SCANLINE_SPEED = 0.50f; 
@@ -61,7 +59,6 @@ void menu_init(void) {
     tex_freddy[2] = graphics_load_texture(IMG_MENU_VAR_2);
     tex_freddy[3] = graphics_load_texture(IMG_MENU_VAR_3);
     
-    // IMPORTANTE: Permitir transparencia en Freddy
     for (int i = 0; i < 4; i++) {
         if (tex_freddy[i]) SDL_SetTextureBlendMode(tex_freddy[i], SDL_BLENDMODE_BLEND);
     }
@@ -125,7 +122,14 @@ void menu_init(void) {
     blip_alpha = 255; 
     freddy_alpha = 255;
     scanline_y = -38.0f; 
-    selected_option = 0; 
+    
+    // --- CAMBIO: Seleccionar "Continue" por defecto si ya hemos jugado ---
+    if (current_night > 1) {
+        selected_option = 1;
+    } else {
+        selected_option = 0;
+    }
+
     is_transitioning = false;
     transition_time = 0;
     static_anim_frame = 0.0f; 
@@ -146,11 +150,9 @@ void menu_init(void) {
 void menu_update(void) {
     Uint64 current_time = SDL_GetTicks64(); 
 
-    // 1. MOVIMIENTO DEL SCANLINE
     scanline_y += SCANLINE_SPEED; 
     if (scanline_y > 720.0f) scanline_y = -38.0f;
 
-    // 2. AVANCE DE FRAMES (Estática y Blip)
     static_anim_frame += MENU_STATIC_SPEED;
     if (static_anim_frame >= 8.0f) static_anim_frame -= 8.0f; 
     current_static = (int)static_anim_frame;
@@ -161,45 +163,35 @@ void menu_update(void) {
         current_blip = (int)blip_anim_frame;
     }
 
-    // --- 3. LÓGICA DE TIEMPOS EXACTA DE CLICKTEAM ---
-
-    // 90 milisegundos: Transparencia de la estática
     if (current_time > last_static_alpha_time + 90) {
         int ct_alpha = 50 + (rand() % 100);
-        static_alpha = 255 - ct_alpha; // Invertido para SDL2
+        static_alpha = 255 - ct_alpha; 
         last_static_alpha_time = current_time;
     }
 
-    // 80 milisegundos: Frame de Freddy y Alpha del Blip
     if (current_time > last_80ms_time + 80) {
-        // Frame de Freddy
         int r = rand() % 100; 
         if (r == 99) current_freddy = 3; 
         else if (r == 98) current_freddy = 2; 
         else if (r == 97) current_freddy = 1; 
         else current_freddy = 0;  
 
-        // Alpha del Blip
         int ct_blip = 100 + (rand() % 100);
         blip_alpha = 255 - ct_blip;
 
         last_80ms_time = current_time;
     }
 
-    // 300 milisegundos: Alpha de Freddy y Toggle del Blip
     if (current_time > last_300ms_time + 300) {
-        // Alpha de Freddy
         int ct_freddy = rand() % 250;
         freddy_alpha = 255 - ct_freddy;
 
-        // Toggle del Blip
         int blip_state = rand() % 3;
         show_blip = (blip_state == 1); 
 
         last_300ms_time = current_time;
     }
 
-    // Lógica de transición de pantalla
     if (is_transitioning) {
         transition_time++; 
         if (selected_option == 0) {
@@ -230,6 +222,11 @@ void menu_update(void) {
                 current_night = 1;
                 save_system_save();
             } 
+            else if (selected_option == 1) {
+                if (current_night > 5) {
+                    current_night = 5;
+                }
+            }
             is_transitioning = true;
             transition_time = 0;
         }
@@ -239,7 +236,6 @@ void menu_update(void) {
 void menu_draw(void) {
     SDL_Renderer* renderer = graphics_get_renderer();
 
-    // DIBUJAMOS A FREDDY CON LA OPACIDAD INESTABLE
     if (tex_freddy[current_freddy]) {
         SDL_SetTextureAlphaMod(tex_freddy[current_freddy], freddy_alpha);
         SDL_RenderCopy(renderer, tex_freddy[current_freddy], NULL, NULL);
@@ -280,9 +276,15 @@ void menu_draw(void) {
             SDL_Rect night_rect = {175, 517, 63, 22}; 
             SDL_RenderCopy(renderer, tex_night, NULL, &night_rect);
         }
-        if (tex_night_num[current_night - 1]) { 
+        
+        int display_night = current_night;
+        if (display_night > 5) {
+            display_night = 5; 
+        }
+
+        if (tex_night_num[display_night - 1]) { 
             SDL_Rect num_rect = {248, 519, 14, 17}; 
-            SDL_RenderCopy(renderer, tex_night_num[current_night - 1], NULL, &num_rect);
+            SDL_RenderCopy(renderer, tex_night_num[display_night - 1], NULL, &num_rect);
         }
     }
 

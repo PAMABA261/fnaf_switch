@@ -20,6 +20,9 @@ static bool cheer_played = false;
 static float fade_in = 255.0f; 
 static float fade_out = 0.0f;
 
+// --- NUEVO: Variable para recordar qué noche acabamos de ganar ---
+ int night_beaten = 0; 
+
 void state_6am_init(void) {
     // 1. CARGA DE GRÁFICOS Y AUDIO
     tex_5 = graphics_load_texture(IMG_6AM_5);
@@ -30,10 +33,15 @@ void state_6am_init(void) {
     sfx_cheer = audio_load_sfx("romfs:/sfx/CROWD_SMALL_CHIL_EC049202.wav");
 
     // 2. LÓGICA DE INICIO (Guardado y Reseteo)
-    current_night++;
-    if (current_night > 5) {
-        current_night = 5; 
+    
+    // Guardamos la noche que acabamos de jugar ANTES de sumarle nada
+    night_beaten = current_night; 
+
+    // Solo sumamos si el jugador no ha llegado al tope absoluto del juego (Noche 7)
+    if (current_night < 7) {
+        current_night++;
     }
+    
     save_system_save();
 
     // 3. INICIALIZACIÓN DE VARIABLES
@@ -76,10 +84,12 @@ void state_6am_update(void) {
     }
 
     if (timer > 600) {
-        if (current_night <= 5) {
-            state_manager_change(STATE_WHAT_DAY); 
+        if (night_beaten >= 5) {
+            // Si es la noche 5, 6 o 7, todas van a la pantalla del cheque/final
+            state_manager_change(STATE_THE_END); 
         } else {
-            state_manager_change(STATE_TITLE); 
+            // Noches 1 a 4 van a la pantalla de "What Day"
+            state_manager_change(STATE_WHAT_DAY); 
         }
     }
 }

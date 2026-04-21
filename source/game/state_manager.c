@@ -44,11 +44,17 @@ void state_6am_update(void);
 void state_6am_draw(void);
 void state_6am_cleanup(void);
 
-// Avisamos al mánager de que estas funciones existen en state_gameover.c (NUEVO)
+// Avisamos al mánager de que estas funciones existen en state_gameover.c
 void state_gameover_init(void);
 void state_gameover_update(void);
 void state_gameover_draw(void);
 void state_gameover_cleanup(void);
+
+// Avisamos al mánager de que estas funciones existen en state_the_end.c 
+void state_the_end_init(void);
+void state_the_end_update(void);
+void state_the_end_draw(void);
+void state_the_end_cleanup(void);
 
 static GameState current_state;
 
@@ -84,11 +90,12 @@ void state_manager_update(void) {
             state_6am_update();
             break;
         case STATE_GAMEOVER:
-            state_gameover_update(); // <-- AÑADIDO
+            state_gameover_update(); 
             break;
         case STATE_CUSTOMIZE: 
             break;
         case STATE_THE_END:   
+            state_the_end_update(); 
             break;
         default: break;
     }
@@ -118,13 +125,13 @@ void state_manager_draw(void) {
             state_6am_draw();
             break;
         case STATE_GAMEOVER:
-            state_gameover_draw(); // <-- AÑADIDO
+            state_gameover_draw(); 
             break;
         case STATE_CUSTOMIZE: 
             // Menú de Custom Night
             break;
         case STATE_THE_END:   
-            // Cheques de pago
+            state_the_end_draw(); 
             break;
         default: break;
     }
@@ -147,11 +154,11 @@ void state_manager_change(GameState new_state) {
     } else if (current_state == STATE_6AM) {  
         state_6am_cleanup();
     } else if (current_state == STATE_GAMEOVER) {
-        state_gameover_cleanup(); // <-- AÑADIDO
+        state_gameover_cleanup(); 
     } else if (current_state == STATE_CUSTOMIZE) {
         // Limpiar el menú de Custom Night
     } else if (current_state == STATE_THE_END) {
-        // Limpiar los cheques de pago
+        state_the_end_cleanup(); 
     }
 
     // 2. Cambiamos la variable de estado
@@ -173,11 +180,11 @@ void state_manager_change(GameState new_state) {
     } else if(current_state == STATE_6AM) {   
         state_6am_init();
     } else if(current_state == STATE_GAMEOVER) {
-        state_gameover_init(); // <-- AÑADIDO
+        state_gameover_init(); 
     } else if(current_state == STATE_CUSTOMIZE) {
         // Inicializar el menú de Custom Night
     } else if(current_state == STATE_THE_END) {
-        // Inicializar los cheques de pago
+        state_the_end_init(); 
     }
 }
 
@@ -190,5 +197,6 @@ void state_manager_cleanup(void) {
     else if (current_state == STATE_LOADING) loading_cleanup(); 
     else if (current_state == STATE_GAME) game_cleanup();
     else if (current_state == STATE_6AM) state_6am_cleanup();
-    else if (current_state == STATE_GAMEOVER) state_gameover_cleanup(); // <-- AÑADIDO
+    else if (current_state == STATE_GAMEOVER) state_gameover_cleanup(); 
+    else if (current_state == STATE_THE_END) state_the_end_cleanup(); 
 }

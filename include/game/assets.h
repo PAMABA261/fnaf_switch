@@ -420,6 +420,11 @@
 #define IMG_GAME_OVER                 GFX_PATH "358.png"
 #define IMG_GAME_OVER_TEXT            GFX_PATH "471.png"
 
+// End
+#define IMG_END_1                     GFX_PATH "210.png" // Noche 5
+#define IMG_END_2                     GFX_PATH "522.png" // Noche 6
+#define IMG_END_3                     GFX_PATH "523.png" // Noche 7
+
 // --- ALUCINACIONES ---
 #define IMG_FREDDY_HALLUTINATION      GFX_PATH "525.png"
 #define IMG_ITS_ME_1                  GFX_PATH "543.png"
