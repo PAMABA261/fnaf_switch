@@ -9,8 +9,11 @@
 ## 📸 Capturas
 
 <img width="1647" height="911" alt="Captura de pantalla (24)" src="https://github.com/user-attachments/assets/e9fc9284-cc0a-4599-84d0-e70f91e5d0fe" />
+
 <img width="1638" height="918" alt="Captura de pantalla 2026-04-21 192814" src="https://github.com/user-attachments/assets/f3ebed5c-bd8c-490b-8d94-55ec04c3acc7" />
+
 <img width="1643" height="920" alt="Captura de pantalla 2026-04-21 192836" src="https://github.com/user-attachments/assets/7bcf24ff-8205-4ae2-ab18-121e7b719161" />
+
 <img width="1639" height="921" alt="Captura de pantalla 2026-04-21 192855" src="https://github.com/user-attachments/assets/6d6adbc4-570e-495f-bd3f-cf89d4cf82e7" />
 
 
