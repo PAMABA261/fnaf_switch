@@ -16,13 +16,13 @@
 
 <img width="1639" height="921" alt="Captura de pantalla 2026-04-21 192855" src="https://github.com/user-attachments/assets/6d6adbc4-570e-495f-bd3f-cf89d4cf82e7" />
 
-
-
 ---
 
 ## 🕹️ ¿Qué es esto?
 
 Un port homebrew del videojuego original **Five Nights at Freddy's** (2014, Scott Cawthon) para **Nintendo Switch**. El proyecto reimplementa la mecánica completa del juego: las noches de supervivencia, el sistema de cámaras, los animatrónicos con su IA, el sistema de energía y todos los estados del juego, usando directamente la API de libnx y devkitPro.
+
+> ⚠️ **Estado del proyecto**: Actualmente incluye las **5 noches principales** del juego original. Las noches personalizadas y adicionales están en desarrollo.
 
 ---
 
@@ -51,7 +51,7 @@ fnaf_switch/
 │   │   ├── graphics.c          # Motor gráfico
 │   │   └── input.c             # Gestión de controles
 │   └── game/
-│       ├── game.c              # Pantalla de Oficina
+│       ├── game.c              # Loop principal (oficina)
 │       ├── camera_system.c     # Sistema de cámaras
 │       ├── power_system.c      # Sistema de energía
 │       ├── save_system.c       # Guardado/carga de partida
@@ -63,6 +63,7 @@ fnaf_switch/
 │       ├── 6am.c               # Pantalla de victoria (6 AM)
 │       ├── warning.c           # Pantalla de advertencia inicial
 │       ├── what_day.c          # Selector de noche
+│       ├── end.c               # Pantalla de cheques
 │       └── ad.c                # Pantalla de anuncio
 ├── include/
 │   ├── engine/                 # Headers del motor
