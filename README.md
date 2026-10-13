@@ -1,4 +1,4 @@
-# 🎮 FNAF Switch
+# FNAF Switch
 
 > *"It's me."*
 
@@ -6,7 +6,7 @@
 
 ---
 
-## 📸 Capturas
+## Capturas
 
 <img width="1647" height="911" alt="Captura de pantalla (24)" src="https://github.com/user-attachments/assets/e9fc9284-cc0a-4599-84d0-e70f91e5d0fe" />
 
@@ -18,28 +18,28 @@
 
 ---
 
-## 🕹️ ¿Qué es esto?
+## ¿Qué es esto?
 
 Un port homebrew del videojuego original **Five Nights at Freddy's** (2014, Scott Cawthon) para **Nintendo Switch**. El proyecto reimplementa la mecánica completa del juego: las noches de supervivencia, el sistema de cámaras, los animatrónicos con su IA, el sistema de energía y todos los estados del juego, usando directamente la API de libnx y devkitPro.
 
-> ⚠️ **Estado del proyecto**: Actualmente incluye las **5 noches principales** del juego original. Las noches personalizadas y adicionales están en desarrollo.
+> **Estado del proyecto**: Actualmente incluye las **5 noches principales** del juego original. Las noches personalizadas y adicionales están en desarrollo.
 
 ---
 
-## ✨ Características
+## Características
 
-- 🤖 **Sistema de animatrónicos** con IA independiente por personaje
-- 📷 **Sistema de cámaras** navegable con los controles de la Switch
-- ⚡ **Sistema de energía** con consumo dinámico según las acciones del jugador
-- 🎵 **Motor de audio** con efectos de sonido y música ambiente
-- 🖥️ **Motor gráfico** propio con soporte de sprites y animaciones por frames (~600 frames)
-- 💾 **Sistema de guardado** para progresar entre noches
-- 📋 **Gestor de estados** (menú, carga, juego, game over, 6AM, advertencias...)
-- 🎮 **Controles nativos** de Nintendo Switch (Joy-Con / Pro Controller)
+- **Sistema de animatrónicos** con IA independiente por personaje
+- **Sistema de cámaras** navegable con los controles de la Switch
+- **Sistema de energía** con consumo dinámico según las acciones del jugador
+- **Motor de audio** con efectos de sonido y música ambiente
+- **Motor gráfico** propio con soporte de sprites y animaciones por frames (~600 frames)
+- **Sistema de guardado** para progresar entre noches
+- **Gestor de estados** (menú, carga, juego, game over, 6AM, advertencias...)
+- **Controles nativos** de Nintendo Switch (Joy-Con / Pro Controller)
 
 ---
 
-## 🗂️ Estructura del proyecto
+## Estructura del proyecto
 
 ```
 fnaf_switch/
@@ -79,7 +79,7 @@ fnaf_switch/
 
 ---
 
-## 🛠️ Requisitos de compilación
+## Requisitos de compilación
 
 - [devkitPro](https://devkitpro.org/) con **devkitA64**
 - **libnx** — librería de sistema para Nintendo Switch homebrew
@@ -93,7 +93,7 @@ dkp-pacman -S switch-dev
 
 ---
 
-## 🔨 Compilación
+## Compilación
 
 ```bash
 git clone https://github.com/PAMABA261/fnaf_switch.git
@@ -105,7 +105,7 @@ Esto generará el archivo `fnaf_switch.nro` listo para ejecutar.
 
 ---
 
-## 🚀 Instalación y ejecución
+## Instalación y ejecución
 
 1. Asegúrate de tener tu Nintendo Switch con **CFW (Custom Firmware)** instalado (p.ej. Atmosphère).
 2. Copia el archivo `fnaf_switch.nro` a la carpeta `/switch/` de tu tarjeta SD.
@@ -114,17 +114,11 @@ Esto generará el archivo `fnaf_switch.nro` listo para ejecutar.
 
 ---
 
-## ⚠️ Aviso legal
+## Aviso legal
 
 Este proyecto es un **fan-made homebrew** sin fines comerciales. Five Nights at Freddy's y todos sus personajes son propiedad de **Scott Cawthon**. Los assets de audio y gráficos originales pertenecen a sus respectivos autores.
 
 Este proyecto es solo para uso educativo y personal.
-
----
-
-## 👤 Autor
-
-Hecho con 🖤 por **PAMABA261**
 
 ---
 
